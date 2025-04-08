@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
-using System.Linq; // Used for OrderBy/ThenBy in Priority Queue simulation
+using Utils;
 using System;     // Used for IComparable
 
 /// <summary>
@@ -62,7 +62,7 @@ public class Pathfinder : MonoBehaviour
     private Dictionary<Vector3Int, FlowFieldNode> finalFlowField;
     // Stores the cost to reach the nearest exit (used for tie-breaking)
     private Dictionary<Vector3Int, int> costToExit;
-    private List<Vector3Int> debug_checkedCells = new List<Vector3Int>(); // For debugging purposes
+    private List<Vector3Int> debug_gizmoCells = new List<Vector3Int>(); // For debugging purposes
     private bool isInitialized = false;
 
     // --- Public Access ---
@@ -214,96 +214,85 @@ public class Pathfinder : MonoBehaviour
         bool avoidAllObstacles,
         Dictionary<Vector3Int, int> exitCostsForTieBreaking = null)
     {
-        // Simple Priority Queue simulation using SortedSet for reasonable performance.
-        // For extreme performance, a custom Min-Heap implementation would be better.
-        SortedSet<DijkstraNode> frontier = new SortedSet<DijkstraNode>();
+        // Use PriorityQueue<Element, Priority>. Priority is a tuple (Cost, TieBreakerCost).
+        PriorityQueue<DijkstraNode, (int, int)> frontier = new PriorityQueue<DijkstraNode, (int, int)>();
 
         // Initialize starting nodes
         foreach (var startCell in startCells)
         {
-            if (!groundTilemap.HasTile(startCell)) continue; // Skip starts outside ground
-
-            // Check if start cell itself is blocked according to rules
-             bool startBlocked;
-             if (avoidAllObstacles) startBlocked = IsCellBlockedByAnyObstacle(startCell);
-             else startBlocked = IsCellBlockedByIndestructible(startCell);
-             if (startBlocked && !startCells.Contains(startCell)) // Allow starting *on* a target even if blocked
-             {
-                 Debug.LogWarning($"Dijkstra start cell {startCell} is blocked by relevant obstacles. Skipping.");
-                 continue;
-             }
-
+            if (!groundTilemap.HasTile(startCell)) continue;
 
             costSoFar[startCell] = 0;
-            cameFrom[startCell] = startCell; // Mark start node
+            cameFrom[startCell] = startCell;
+
             int tieBreaker = 0;
-            if (exitCostsForTieBreaking != null)
-            {
-                // If calculating destructible field, use cost to exit as tie-breaker
+            if (exitCostsForTieBreaking != null) {
                 tieBreaker = exitCostsForTieBreaking.TryGetValue(startCell, out int exitCost) ? exitCost : int.MaxValue;
             }
 
-            frontier.Add(new DijkstraNode(startCell, 0, tieBreaker, startCell));
+            DijkstraNode startNode = new DijkstraNode(startCell, 0, tieBreaker, startCell);
+            // Enqueue with priority (Cost, TieBreakerCost)
+            frontier.Enqueue(startNode, (startNode.Cost, startNode.TieBreakerCost));
         }
 
         // Dijkstra Loop
-        while (frontier.Count > 0)
+        while (frontier.TryDequeue(out DijkstraNode currentNode, out (int Cost, int Tiebreaker) currentPriority))
         {
-            DijkstraNode currentNode = frontier.Min; // Get node with lowest cost (and tie-breaker)
-            frontier.Remove(currentNode);
-            debug_checkedCells.Add(currentNode.Position); // For debugging
+            // --- Optimization: Check for stale nodes ---
+            // If we already found a shorter path to this node *after* this entry was enqueued, skip it.
+            if (costSoFar.ContainsKey(currentNode.Position) && currentPriority.Cost > costSoFar[currentNode.Position])
+            {
+                continue;
+            }
+            // --- End Optimization ---
+
+            
+            //debug_gizmoCells.Add(currentNode.Position);
+            // --- End Debug ---
+
             foreach (Vector3Int neighborCell in GetNeighbors(currentNode.Position))
             {
                 // --- Neighbor Validation ---
-                if (!groundTilemap.HasTile(neighborCell)) continue; // Must be on ground
-                // Check obstacles based on calculation type
-                bool blocked;
-                if (avoidAllObstacles) blocked = IsCellBlockedByAnyObstacle(neighborCell);
-                else blocked = IsCellBlockedByIndestructible(neighborCell); // Allow moving onto/through destructibles
+                if (!groundTilemap.HasTile(neighborCell)) continue;
 
-                if (blocked) continue; // Skip blocked neighbors
+                bool isNeighborBlocked;
+                if (avoidAllObstacles) isNeighborBlocked = IsCellBlockedByAnyObstacle(neighborCell);
+                else isNeighborBlocked = IsCellBlockedByIndestructible(neighborCell);
+
+                if (isNeighborBlocked) continue;
 
                 // --- Cost Calculation ---
-                int newCost = currentNode.Cost + 1; // Assuming uniform cost grid
+                int newCost = currentNode.Cost + 1;
 
                 // --- Update Neighbor ---
+                // Check if we haven't visited neighbor OR found a shorter path
                 if (!costSoFar.ContainsKey(neighborCell) || newCost < costSoFar[neighborCell])
                 {
+                    // Update cost and path *before* enqueuing
                     costSoFar[neighborCell] = newCost;
                     cameFrom[neighborCell] = currentNode.Position;
 
+                    // Calculate tie-breaker cost
                     int tieBreaker = 0;
-                    if (exitCostsForTieBreaking != null)
-                    {
+                    if (exitCostsForTieBreaking != null) {
                         tieBreaker = exitCostsForTieBreaking.TryGetValue(neighborCell, out int exitCost) ? exitCost : int.MaxValue;
                     }
 
-                    // Add/Update neighbor in frontier. SortedSet handles uniqueness based on CompareTo.
-                    // If a node with the same Position exists but higher cost, removing/re-adding is needed
-                    // for sets that don't automatically update priority based on value changes.
-                    // Let's find if it exists first. (This adds overhead, proper heap is better)
-                    DijkstraNode existingNode = frontier.FirstOrDefault(n => n.Position == neighborCell);
-                    if (existingNode != null)
-                    {
-                        // If new path is better (lower cost or same cost but better tie-breaker)
-                        if (newCost < existingNode.Cost || (newCost == existingNode.Cost && tieBreaker < existingNode.TieBreakerCost))
-                        {
-                            frontier.Remove(existingNode); // Remove old entry
-                            frontier.Add(new DijkstraNode(neighborCell, newCost, tieBreaker, currentNode.Position)); // Add new entry
-                        }
-                    }
-                    else
-                    {
-                         frontier.Add(new DijkstraNode(neighborCell, newCost, tieBreaker, currentNode.Position));
-                    }
+                    // Create the new node representing the path to the neighbor
+                    DijkstraNode neighborNode = new DijkstraNode(neighborCell, newCost, tieBreaker, currentNode.Position);
+
+                    // Enqueue the neighbor. The PriorityQueue handles the sorting.
+                    // If a better path is found later, a new node for the same position
+                    // will be enqueued, and the stale node check above will handle it.
+                    frontier.Enqueue(neighborNode, (neighborNode.Cost, neighborNode.TieBreakerCost));
                 }
-            }
-        }
+            } // End foreach neighbor
+        } // End while frontier not empty
     }
     void OnDrawGizmos()
     {
         
-        DrawDebugGizmosForCell(debug_checkedCells, 0.5f);
+        DrawDebugGizmosForCell(debug_gizmoCells, 0.5f);
     }
 
     /// <summary>
