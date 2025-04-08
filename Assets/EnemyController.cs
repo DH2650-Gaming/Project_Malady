@@ -12,6 +12,7 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private int maxHealth = 100;
     [Tooltip("Movement speed in units per second.")]
     [SerializeField] private float moveSpeed = 2.0f;
+    
 
     [Header("References")]
     [Tooltip("Reference to the ground tilemap for cell calculations. If null, attempts to get from Pathfinder.")]
@@ -63,43 +64,42 @@ public class EnemyController : MonoBehaviour
     {
         if (groundTilemap == null || pathfinder == null) return; // Safety check
 
-        // 1. Get Current Cell Position
-        // Convert world position to the tilemap's cell coordinate
         Vector3Int currentCell = groundTilemap.WorldToCell(transform.position);
-
-        // 2. Query Flow Field
         FlowFieldNode node = pathfinder.GetFlowFieldNode(currentCell);
 
-        // 3. Determine Action based on Flow Field Status
         switch (node.Status)
         {
             case FlowFieldStatus.ReachesExit:
             case FlowFieldStatus.ReachesDestructible:
-                // Move towards the direction indicated by the flow field node
-                // Note: Assumes node.DirectionToTarget points where the unit should go.
-                // For smoother movement, consider moving towards the center of the *next* cell
-                // rather than just applying the direction vector directly.
-                Vector3 targetDirection = node.DirectionToTarget;
+                // Check if we are already at the target (cost 0)
+                if (node.Cost == 0) {
+                    HandleReachedTarget(node.Status);
+                    return; // Stop moving if already at target
+                }
 
-                // Simple movement: move in the calculated direction
-                // For grid-based games, moving towards the center of the next cell might be better:
-                // Vector3 targetWorldPos = groundTilemap.GetCellCenterWorld(currentCell + Vector3Int.RoundToInt(targetDirection));
-                // transform.position = Vector3.MoveTowards(transform.position, targetWorldPos, moveSpeed * Time.deltaTime);
+                // Ensure there's a valid direction to move
+                if (node.DirectionToTarget != Vector3.zero)
+                {
+                    // --- Refined Movement: Move towards next cell center ---
+                    // Calculate the next cell based on the direction vector
+                    // Assumes DirectionToTarget points from currentCell towards the next cell
+                    Vector3Int nextCell = currentCell + Vector3Int.RoundToInt(node.DirectionToTarget);
 
-                // Simplest implementation: Move along the direction vector
-                // Ensure the direction is not zero before normalizing or moving
-                 if (targetDirection != Vector3.zero)
-                 {
-                    // Optional: Rotate to face movement direction
-                    // transform.up = targetDirection; // Or transform.forward depending on sprite orientation
+                    // Get the world position of the center of the next cell
+                    Vector3 targetWorldPos = groundTilemap.GetCellCenterWorld(nextCell);
 
-                    transform.position += targetDirection.normalized * moveSpeed * Time.deltaTime;
-                 }
-                 else if (node.Cost == 0) // Reached the target (exit or destructible)
-                 {
-                     HandleReachedTarget(node.Status);
-                 }
+                    // Move the enemy's transform towards that target position
+                    transform.position = Vector3.MoveTowards(transform.position, targetWorldPos, moveSpeed * Time.deltaTime);
 
+                    // Optional: Rotate to face the target position (if needed)
+                    // Vector3 moveDirection = (targetWorldPos - transform.position).normalized;
+                    // if (moveDirection != Vector3.zero) {
+                    //    Quaternion targetRotation = Quaternion.LookRotation(Vector3.forward, moveDirection); // Adjust axis based on 2D/3D setup
+                    //    transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+                    // }
+                    // --- End Refined Movement ---
+                }
+                // else: Direction is zero, but cost is not 0? Should not happen with correct CombineFields logic.
                 break;
 
             case FlowFieldStatus.Blocked:
