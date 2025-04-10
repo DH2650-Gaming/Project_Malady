@@ -401,7 +401,7 @@ public class Pathfinder : MonoBehaviour
         };
     }
 
-    private bool IsCellBlockedByIndestructible(Vector3Int cell)
+    public bool IsCellBlockedByIndestructible(Vector3Int cell)
     {
         if (indestructibleObstacleTilemaps == null) return false;
         foreach (Tilemap map in indestructibleObstacleTilemaps)
@@ -411,7 +411,7 @@ public class Pathfinder : MonoBehaviour
         return false;
     }
 
-    private bool IsCellDestructible(Vector3Int cell)
+    public bool IsCellDestructible(Vector3Int cell)
     {
         if (destructibleObstacleTilemaps == null) return false;
         foreach (Tilemap map in destructibleObstacleTilemaps)
@@ -421,7 +421,7 @@ public class Pathfinder : MonoBehaviour
         return false;
     }
 
-    private bool IsCellBlockedByAnyObstacle(Vector3Int cell)
+    public bool IsCellBlockedByAnyObstacle(Vector3Int cell)
     {
         return IsCellBlockedByIndestructible(cell) || IsCellDestructible(cell);
     }

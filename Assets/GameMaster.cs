@@ -42,7 +42,7 @@ public class GameMaster : MonoBehaviour
 
     [Header("Pathfinding")]
     [Tooltip("Reference to the Pathfinder instance. If null, will attempt to find it.")]
-    [SerializeField] private Pathfinder pathfinderInstance;
+    public Pathfinder pathfinderInstance;
 
     [Header("Enemy Spawning")]
     [Tooltip("List of different enemy prefabs to spawn.")]
