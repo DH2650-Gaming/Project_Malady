@@ -7,13 +7,24 @@ public class TurretPlacer : MonoBehaviour
 {
     [SerializeField] private GameObject[] turrets;
     [SerializeField] private TileBase placeholderTilePrefab;
-    public Pathfinder pathfinder;
-
+    [SerializeField] private GameMaster gminstance;
 
     private int _currentTurretIndex = -1;
     private GameObject _currentTurret;
     private Vector2 _offset = new Vector2(0.5f, 0.5f);
     
+    void Start()
+    {
+        if (gminstance == null)
+        {
+            gminstance = GameMaster.Instance;
+        }
+        if (gminstance == null)
+        {
+            Debug.LogError("GameMaster instance not found in the scene!");
+            return;
+        }
+    }
     void Update()
     {
         HandleKeyPress();
@@ -58,8 +69,8 @@ public class TurretPlacer : MonoBehaviour
 
     private void PlaceTurret()
     {
-        Tilemap _groundTilemap = pathfinder.groundTilemap;
-        Tilemap _turretTilemap = pathfinder.destructibleObstacleTilemaps[0];
+        Tilemap _groundTilemap = gminstance.groundTilemap;
+        Tilemap _turretTilemap = gminstance.destructibleObstacleTilemaps[0];
         if (Input.GetMouseButtonDown(0))
         {
             Vector3 worldPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -93,7 +104,7 @@ public class TurretPlacer : MonoBehaviour
                 }
 
                 Debug.Log($"Placed turret at {bottomLeftCell}");
-                pathfinder.CalculateFlowFields();
+                gminstance.pathfinderInstance.CalculateFlowFields();
 
             }
             else
@@ -105,9 +116,9 @@ public class TurretPlacer : MonoBehaviour
     }
     private bool CanPlaceTurret(Vector3Int[] cellsToCheck)
     {
-        Tilemap _groundTilemap = pathfinder.groundTilemap;
-        Tilemap [] indestructibleObstacleTilemaps = pathfinder.indestructibleObstacleTilemaps;
-        Tilemap [] destructibleObstacleTilemaps = pathfinder.destructibleObstacleTilemaps;
+        Tilemap _groundTilemap = gminstance.groundTilemap;
+        Tilemap [] indestructibleObstacleTilemaps = gminstance.indestructibleObstacleTilemaps;
+        Tilemap [] destructibleObstacleTilemaps = gminstance.destructibleObstacleTilemaps;
 
         foreach (var cell in cellsToCheck)
         {

@@ -13,45 +13,37 @@ public class EnemyController : MonoBehaviour
     [Tooltip("Movement speed in units per second.")]
     [SerializeField] private float moveSpeed = 2.0f;
     
-
-    [Header("References")]
-    [Tooltip("Reference to the ground tilemap for cell calculations. If null, attempts to get from Pathfinder.")]
-    [SerializeField] private Tilemap groundTilemap;
+    private Tilemap groundTilemap;
 
     // --- Private State ---
     private int currentHealth;
-    private Pathfinder pathfinder; // Cached reference to the pathfinder
+    private GameMaster gm;
 
     void Start()
     {
         currentHealth = maxHealth;
 
         // Get singleton instance
-        pathfinder = Pathfinder.Instance;
-        if (pathfinder == null)
+        gm = GameMaster.Instance;
+        if (gm == null)
         {
-            Debug.LogError($"Enemy {gameObject.name} cannot find Pathfinder instance!", this);
-            enabled = false; // Disable script if pathfinder is missing
+            Debug.LogError($"Enemy {gameObject.name} cannot find GameMaster instance!", this);
+            enabled = false;
             return;
         }
 
-        // Attempt to get ground tilemap reference if not set
+        groundTilemap = gm.groundTilemap;
         if (groundTilemap == null)
         {
-            groundTilemap = pathfinder.groundTilemap;
-            if (groundTilemap == null)
-            {
-                 Debug.LogError($"Enemy {gameObject.name} needs a Ground Tilemap reference, and couldn't get it from Pathfinder!", this);
-                 enabled = false; // Disable script if tilemap is missing
-                 return;
-            }
+            Debug.LogError($"Enemy {gameObject.name} needs a Ground Tilemap reference, and couldn't get it from GameMaster!", this);
+            enabled = false; // Disable script if tilemap is missing
+            return;
         }
     }
 
     void Update()
     {
-        // Only handle movement if the pathfinder is ready
-        if (pathfinder != null) // Check instance validity
+        if (gm != null) // Check instance validity
         {
             HandleMovement();
         }
@@ -62,10 +54,10 @@ public class EnemyController : MonoBehaviour
     /// </summary>
     protected virtual void HandleMovement()
     {
-        if (groundTilemap == null || pathfinder == null) return; // Safety check
+        if (groundTilemap == null || gm == null) return; // Safety check
 
         Vector3Int currentCell = groundTilemap.WorldToCell(transform.position);
-        FlowFieldNode node = pathfinder.GetFlowFieldNode(currentCell);
+        FlowFieldNode node = gm.pathfinderInstance.GetFlowFieldNode(currentCell);
 
         switch (node.Status)
         {
@@ -168,10 +160,10 @@ public class EnemyController : MonoBehaviour
      void OnDrawGizmos()
      {
         // Draw the path direction if the pathfinder is initialized
-        if (Application.isPlaying && pathfinder != null && groundTilemap != null)
+        if (Application.isPlaying && gm != null && groundTilemap != null)
         {
              Vector3Int currentCell = groundTilemap.WorldToCell(transform.position);
-             FlowFieldNode node = pathfinder.GetFlowFieldNode(currentCell);
+             FlowFieldNode node = gm.pathfinderInstance.GetFlowFieldNode(currentCell);
 
              if(node.Status != FlowFieldStatus.Blocked && node.DirectionToTarget != Vector3.zero)
              {

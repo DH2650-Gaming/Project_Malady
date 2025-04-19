@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Tilemaps;
 using System.Collections.Generic; // Required for Lists
 
 /// <summary>
@@ -41,14 +42,22 @@ public class GameMaster : MonoBehaviour
     // --- End Singleton Setup ---
 
     [Header("Pathfinding")]
-    [Tooltip("Reference to the Pathfinder instance. If null, will attempt to find it.")]
-    public Pathfinder pathfinderInstance;
+    [Tooltip("Reference to the Pathfinder instance. Please set to null, will create automatically.")]
+    [ReadOnly] public Pathfinder pathfinderInstance;
+    [Tooltip("The main tilemap defining walkable ground areas.")]
+    public Tilemap groundTilemap;
+    [Tooltip("Tilemaps containing obstacles that CANNOT be destroyed.")]
+    public Tilemap[] indestructibleObstacleTilemaps;
+    [Tooltip("Tilemaps containing obstacles that CAN be destroyed.")]
+    public Tilemap[] destructibleObstacleTilemaps;
 
     [Header("Enemy Spawning")]
     [Tooltip("List of different enemy prefabs to spawn.")]
     [SerializeField] private List<GameObject> enemyPrefabs = new List<GameObject>();
     [Tooltip("List of possible locations where enemies can spawn.")]
-    [SerializeField] private List<Transform> spawnPoints = new List<Transform>();
+    [SerializeField] private List<Transform> spawnCells = new List<Transform>();
+    [Tooltip("List of all possible exit cells.")]
+    [SerializeField] private List<Transform> exitCells = new List<Transform>();
     [Tooltip("Time delay in seconds between spawning enemies.")]
     [SerializeField] private float spawnInterval = 2.0f;
     // Add more variables here for wave logic later (e.g., enemiesPerWave, timeBetweenWaves)
@@ -66,7 +75,7 @@ public class GameMaster : MonoBehaviour
         // Ensure we have the Pathfinder instance
         if (pathfinderInstance == null)
         {
-            pathfinderInstance = Pathfinder.Instance;
+            pathfinderInstance = new Pathfinder(groundTilemap, indestructibleObstacleTilemaps, destructibleObstacleTilemaps, exitCells);
         }
 
         if (pathfinderInstance == null)
@@ -94,7 +103,7 @@ public class GameMaster : MonoBehaviour
          if (enemyPrefabs.Count == 0) {
              Debug.LogWarning("GameMaster: No enemy prefabs assigned!", this);
          }
-         if (spawnPoints.Count == 0) {
+         if (spawnCells.Count == 0) {
              Debug.LogWarning("GameMaster: No spawn points assigned!", this);
          }
     }
@@ -102,7 +111,7 @@ public class GameMaster : MonoBehaviour
     void Update()
     {
         // Don't run update logic if critical components are missing or not ready
-        if (!pathfinderInitialized || enemyPrefabs.Count == 0 || spawnPoints.Count == 0)
+        if (!pathfinderInitialized || enemyPrefabs.Count == 0 || spawnCells.Count == 0)
         {
             return;
         }
@@ -131,9 +140,9 @@ public class GameMaster : MonoBehaviour
         GameObject prefabToSpawn = enemyPrefabs[0]; // TODO: Implement logic for choosing different prefabs
 
         // --- Select Spawn Point ---
-        if (spawnPoints.Count == 0) return; // Should be caught in Start, but double-check
-        int spawnIndex = Random.Range(0, spawnPoints.Count);
-        Transform selectedSpawnPoint = spawnPoints[spawnIndex];
+        if (spawnCells.Count == 0) return; // Should be caught in Start, but double-check
+        int spawnIndex = Random.Range(0, spawnCells.Count);
+        Transform selectedSpawnPoint = spawnCells[spawnIndex];
 
         if (selectedSpawnPoint == null)
         {

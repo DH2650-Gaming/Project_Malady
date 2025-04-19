@@ -4,60 +4,42 @@ using System.Collections.Generic;
 using Utils;
 using System;     // Used for IComparable
 
-/// <summary>
-/// Calculates and stores Flow Field pathfinding data for a Tilemap environment.
-/// Prioritizes paths to the nearest exit, with a fallback to the nearest
-/// destructible obstacle for cells that cannot reach an exit.
-/// </summary>
-public class Pathfinder : MonoBehaviour
+
+[System.Serializable] // Make visible in Inspector if needed elsewhere
+public struct FlowFieldNode
 {
-    // --- Singleton Setup ---
-    private static Pathfinder _instance;
-    public static Pathfinder Instance
+    public Vector3 DirectionToTarget; // Normalized direction vector towards the next cell on the path
+    public int Cost;                  // Cost (e.g., distance) to reach the target (exit or destructible)
+    public FlowFieldStatus Status;    // Indicates what type of target this node path leads to
+
+    public FlowFieldNode(Vector3 direction, int cost, FlowFieldStatus status)
     {
-        get
-        {
-            if (_instance == null)
-            {
-                _instance = FindFirstObjectByType<Pathfinder>();
-                if (_instance == null)
-                {
-                    Debug.LogError("Pathfinder instance not found in the scene!");
-                }
-            }
-            return _instance;
-        }
+        DirectionToTarget = direction;
+        Cost = cost;
+        Status = status;
     }
 
-    void Awake()
-    {
-        if (_instance == null)
-        {
-            _instance = this;
-            // Optional: DontDestroyOnLoad(gameObject);
-        }
-        else if (_instance != this)
-        {
-            Debug.LogWarning("Duplicate Pathfinder instance found, destroying this one.");
-            Destroy(gameObject);
-        }
-    }
-    // --- End Singleton Setup ---
+    // Static property for a default blocked node
+    public static readonly FlowFieldNode BlockedNode = new FlowFieldNode(Vector3.zero, int.MaxValue, FlowFieldStatus.Blocked);
+}
 
-    // --- Inspector References ---
-    [Header("Tilemap References")]
-    [Tooltip("The main tilemap defining walkable ground areas.")]
-    public Tilemap groundTilemap;
-    [Tooltip("Tilemaps containing obstacles that CANNOT be destroyed.")]
-    public Tilemap[] indestructibleObstacleTilemaps;
-    [Tooltip("Tilemaps containing obstacles that CAN be destroyed.")]
-    public Tilemap[] destructibleObstacleTilemaps;
 
-    [Header("Pathfinding Targets")]
-    [Tooltip("List of all possible exit cell coordinates.")]
-    public List<Transform> exitCells = new List<Transform>();
+public enum FlowFieldStatus
+{
+    Blocked,             // Cannot reach any target
+    ReachesExit,         // Path leads towards the nearest exit
+    ReachesDestructible  // Path leads towards the nearest destructible (only if exit is unreachable)
+}
+
+public class Pathfinder
+{
+    private Tilemap groundTilemap;
+    
+    private Tilemap[] indestructibleObstacleTilemaps;
+    private Tilemap[] destructibleObstacleTilemaps;
+
     private List<Vector3Int> exitCellPositions = new List<Vector3Int>();
-    // --- Flow Field Data ---
+
     // Stores the final calculated data for each cell
     private Dictionary<Vector3Int, FlowFieldNode> finalFlowField;
     // Stores the cost to reach the nearest exit (used for tie-breaking)
@@ -67,40 +49,37 @@ public class Pathfinder : MonoBehaviour
 
     // --- Public Access ---
 
-    /// <summary>
-    /// Call this to perform the pre-computation of the flow fields.
-    /// Should be called after level setup and whenever static obstacles change significantly.
-    /// </summary>
-    [ContextMenu("Calculate Flow Fields")]
-    public void CalculateFlowFields()
+    public Pathfinder(
+        Tilemap groundTilemap,
+        Tilemap[] indestructibleObstacleTilemaps,
+        Tilemap[] destructibleObstacleTilemaps,
+        List<Transform> exitCells)
     {
-        if (groundTilemap == null || exitCells == null || exitCells.Count == 0)
-        {
-            Debug.LogError("Cannot calculate Flow Fields: Ground Tilemap or Exit Cells are not set!");
-            isInitialized = false;
-            return;
-        }
-        // Convert exit cell transforms to Vector3Int positions
-        exitCellPositions.Clear();
+        this.groundTilemap = groundTilemap;
+        this.indestructibleObstacleTilemaps = indestructibleObstacleTilemaps;
+        this.destructibleObstacleTilemaps = destructibleObstacleTilemaps;
         foreach (var exit in exitCells)
         {
             Vector3Int cellPosition = groundTilemap.WorldToCell(exit.position);
-            if (groundTilemap.HasTile(cellPosition))
+            if (this.groundTilemap.HasTile(cellPosition))
             {
-                exitCellPositions.Add(cellPosition);
+                this.exitCellPositions.Add(cellPosition);
             }
             else
             {
                 Debug.LogWarning($"Exit cell {exit.name} is not on the ground tilemap. Skipping.");
             }
         }
-        if (exitCellPositions.Count == 0)
+    }
+
+    public void CalculateFlowFields()
+    {
+        if (groundTilemap == null || exitCellPositions == null || exitCellPositions.Count == 0)
         {
-            Debug.LogError("No valid exit cells found on the ground tilemap!");
+            Debug.LogError("Cannot calculate Flow Fields: Ground Tilemap or Exit Cells are not set!");
             isInitialized = false;
             return;
         }
-
         Debug.Log("Starting Flow Field Calculation...");
         System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -111,15 +90,13 @@ public class Pathfinder : MonoBehaviour
 
         // --- Phase 2: Identify Unreached Cells and Destructible Targets ---
         HashSet<Vector3Int> cellsWithoutExitPath = new HashSet<Vector3Int>();
-        List<Vector3Int> destructibleCells = new List<Vector3Int>();
-        FindUnreachedAndDestructibles(cellsWithoutExitPath, destructibleCells);
+        FindUnreachedCells(cellsWithoutExitPath);
 
         // --- Phase 3: Calculate Flow Field to Nearest Destructible (for unreached cells) ---
         Dictionary<Vector3Int, int> costToDestructible = new Dictionary<Vector3Int, int>();
         Dictionary<Vector3Int, Vector3Int> cameFromDestructible = new Dictionary<Vector3Int, Vector3Int>();
 
-        // Use the costToExit data for tie-breaking in the Dijkstra calculation
-        CalculateDijkstra(destructibleCells, costToDestructible, cameFromDestructible, false, costToExit); // Avoids only INDESTRUCTIBLE obstacles
+        CalculateDijkstra(exitCellPositions, costToDestructible, cameFromDestructible, false); // Avoids only INDESTRUCTIBLE obstacles
 
         // --- Phase 4: Combine Results into Final Flow Field ---
         finalFlowField = new Dictionary<Vector3Int, FlowFieldNode>();
@@ -206,16 +183,13 @@ public class Pathfinder : MonoBehaviour
     /// <param name="costSoFar">Dictionary to store the calculated minimum cost to reach each cell.</param>
     /// <param name="cameFrom">Dictionary to store the preceding cell in the shortest path found so far.</param>
     /// <param name="avoidAllObstacles">If true, avoids both destructible and indestructible. If false, avoids only indestructible.</param>
-    /// <param name="exitCostsForTieBreaking">Optional: Pre-calculated costs to exit, used for tie-breaking when calculating destructible field.</param>
     private void CalculateDijkstra(
         List<Vector3Int> startCells,
         Dictionary<Vector3Int, int> costSoFar,
         Dictionary<Vector3Int, Vector3Int> cameFrom,
-        bool avoidAllObstacles,
-        Dictionary<Vector3Int, int> exitCostsForTieBreaking = null)
+        bool avoidAllObstacles)
     {
-        // Use PriorityQueue<Element, Priority>. Priority is a tuple (Cost, TieBreakerCost).
-        PriorityQueue<DijkstraNode, (int, int)> frontier = new PriorityQueue<DijkstraNode, (int, int)>();
+        PriorityQueue<DijkstraNode, int> frontier = new PriorityQueue<DijkstraNode, int>();
 
         // Initialize starting nodes
         foreach (var startCell in startCells)
@@ -225,22 +199,17 @@ public class Pathfinder : MonoBehaviour
             costSoFar[startCell] = 0;
             cameFrom[startCell] = startCell;
 
-            int tieBreaker = 0;
-            if (exitCostsForTieBreaking != null) {
-                tieBreaker = exitCostsForTieBreaking.TryGetValue(startCell, out int exitCost) ? exitCost : int.MaxValue;
-            }
-
-            DijkstraNode startNode = new DijkstraNode(startCell, 0, tieBreaker, startCell);
+            DijkstraNode startNode = new DijkstraNode(startCell, 0, 0, startCell);
             // Enqueue with priority (Cost, TieBreakerCost)
-            frontier.Enqueue(startNode, (startNode.Cost, startNode.TieBreakerCost));
+            frontier.Enqueue(startNode, startNode.Cost);
         }
 
         // Dijkstra Loop
-        while (frontier.TryDequeue(out DijkstraNode currentNode, out (int Cost, int Tiebreaker) currentPriority))
+        while (frontier.TryDequeue(out DijkstraNode currentNode, out int Cost))
         {
             // --- Optimization: Check for stale nodes ---
             // If we already found a shorter path to this node *after* this entry was enqueued, skip it.
-            if (costSoFar.ContainsKey(currentNode.Position) && currentPriority.Cost > costSoFar[currentNode.Position])
+            if (costSoFar.ContainsKey(currentNode.Position) && Cost > costSoFar[currentNode.Position])
             {
                 continue;
             }
@@ -255,15 +224,16 @@ public class Pathfinder : MonoBehaviour
                 // --- Neighbor Validation ---
                 if (!groundTilemap.HasTile(neighborCell)) continue;
 
-                bool isNeighborBlocked;
-                if (avoidAllObstacles) isNeighborBlocked = IsCellBlockedByAnyObstacle(neighborCell);
-                else isNeighborBlocked = IsCellBlockedByIndestructible(neighborCell);
-
-                if (isNeighborBlocked) continue;
-
+                bool isNeighborBlocked = IsCellBlockedByAnyObstacle(neighborCell);
+                bool isNeighborBlockedbyIndestructible = IsCellBlockedByIndestructible(neighborCell); 
+                if (avoidAllObstacles && isNeighborBlocked) continue; // Skip if we want to avoid all obstacles
+                if (!avoidAllObstacles && isNeighborBlockedbyIndestructible) continue;
+            
                 // --- Cost Calculation ---
                 int newCost = currentNode.Cost + 1;
-
+                if (isNeighborBlocked){
+                    newCost += 6;
+                }
                 // --- Update Neighbor ---
                 // Check if we haven't visited neighbor OR found a shorter path
                 if (!costSoFar.ContainsKey(neighborCell) || newCost < costSoFar[neighborCell])
@@ -272,19 +242,13 @@ public class Pathfinder : MonoBehaviour
                     costSoFar[neighborCell] = newCost;
                     cameFrom[neighborCell] = currentNode.Position;
 
-                    // Calculate tie-breaker cost
-                    int tieBreaker = 0;
-                    if (exitCostsForTieBreaking != null) {
-                        tieBreaker = exitCostsForTieBreaking.TryGetValue(neighborCell, out int exitCost) ? exitCost : int.MaxValue;
-                    }
-
                     // Create the new node representing the path to the neighbor
-                    DijkstraNode neighborNode = new DijkstraNode(neighborCell, newCost, tieBreaker, currentNode.Position);
+                    DijkstraNode neighborNode = new DijkstraNode(neighborCell, newCost, 0, currentNode.Position);
 
                     // Enqueue the neighbor. The PriorityQueue handles the sorting.
                     // If a better path is found later, a new node for the same position
                     // will be enqueued, and the stale node check above will handle it.
-                    frontier.Enqueue(neighborNode, (neighborNode.Cost, neighborNode.TieBreakerCost));
+                    frontier.Enqueue(neighborNode, neighborNode.Cost);
                 }
             } // End foreach neighbor
         } // End while frontier not empty
@@ -296,9 +260,9 @@ public class Pathfinder : MonoBehaviour
     }
 
     /// <summary>
-    /// Finds all ground cells that couldn't reach an exit and identifies all destructible obstacle locations.
+    /// Finds all ground cells that couldn't reach an exit.
     /// </summary>
-    private void FindUnreachedAndDestructibles(HashSet<Vector3Int> cellsWithoutExitPath, List<Vector3Int> destructibleCells)
+    private void FindUnreachedCells(HashSet<Vector3Int> cellsWithoutExitPath)
     {
         if (groundTilemap == null) return;
 
@@ -316,19 +280,13 @@ public class Pathfinder : MonoBehaviour
                         Debug.Log($"Cell {cell} cannot reach any exit.");
                         cellsWithoutExitPath.Add(cell);
                     }
-
-                    // Check if it's a destructible obstacle
-                    if (IsCellDestructible(cell))
-                    {
-                        destructibleCells.Add(cell);
-                    }
                 }else
                 {
                     Debug.LogWarning($"Cell {cell} is not on the ground tilemap. Skipping.");
                 }
             }
         }
-         Debug.Log($"Found {cellsWithoutExitPath.Count} cells without exit path and {destructibleCells.Count} destructible cells.");
+        Debug.Log($"Found {cellsWithoutExitPath.Count} cells without exit path.");
     }
 
 
@@ -439,37 +397,4 @@ public class Pathfinder : MonoBehaviour
 
 
     }
-}
-
-// --- Supporting Structures ---
-
-/// <summary>
-/// Represents the calculated flow field data for a single cell.
-/// </summary>
-[System.Serializable] // Make visible in Inspector if needed elsewhere
-public struct FlowFieldNode
-{
-    public Vector3 DirectionToTarget; // Normalized direction vector towards the next cell on the path
-    public int Cost;                  // Cost (e.g., distance) to reach the target (exit or destructible)
-    public FlowFieldStatus Status;    // Indicates what type of target this node path leads to
-
-    public FlowFieldNode(Vector3 direction, int cost, FlowFieldStatus status)
-    {
-        DirectionToTarget = direction;
-        Cost = cost;
-        Status = status;
-    }
-
-    // Static property for a default blocked node
-    public static readonly FlowFieldNode BlockedNode = new FlowFieldNode(Vector3.zero, int.MaxValue, FlowFieldStatus.Blocked);
-}
-
-/// <summary>
-/// Indicates the status of a cell within the flow field.
-/// </summary>
-public enum FlowFieldStatus
-{
-    Blocked,             // Cannot reach any target
-    ReachesExit,         // Path leads towards the nearest exit
-    ReachesDestructible  // Path leads towards the nearest destructible (only if exit is unreachable)
 }
