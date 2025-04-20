@@ -78,24 +78,18 @@ public class TurretPlacer : MonoBehaviour
             worldPoint.z = _groundTilemap.transform.position.z;
             Vector3Int bottomLeftCell = _groundTilemap.WorldToCell(worldPoint);
 
-            // Define the 2x2 area cells
-            Vector3Int[] placementCells = new Vector3Int[4] {
-                bottomLeftCell,                         // Bottom-left
-                bottomLeftCell + Vector3Int.right,      // Bottom-right
-                bottomLeftCell + Vector3Int.up,         // Top-left
-                bottomLeftCell + Vector3Int.right + Vector3Int.up // Top-right
+            // Define the 1x1 area cells
+            Vector3Int[] placementCells = new Vector3Int[1] {
+                bottomLeftCell
             };
             
            if (CanPlaceTurret(placementCells))
             {
                 // --- Placement ---
-                // Calculate the position to instantiate: Center of the 2x2 area
-                // CellToWorld gives the bottom-left corner of the cell. Add cellSize to get center of 2x2.
-                Vector3 placementPosition = _groundTilemap.CellToWorld(bottomLeftCell) + (Vector3)_groundTilemap.cellSize * 1.0f; // Center of the 2x2 block
+                Vector3 placementPosition = _groundTilemap.GetCellCenterWorld(bottomLeftCell) ;
 
 
                 GameObject placedTurret = Instantiate(_currentTurret, placementPosition, Quaternion.identity);
-                placedTurret.transform.localScale = Vector3.one * 2; // Scale the turret
 
                 // Mark the cells as occupied
                 foreach (var cell in placementCells)

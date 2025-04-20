@@ -6,6 +6,32 @@ using System.Collections.Generic; // Required for Lists
 /// Manages the overall game state, including pathfinder initialization,
 /// enemy spawning, and tracking game progress (like enemies reaching the exit).
 /// </summary>
+
+[System.Serializable]
+public class EnemyData{
+    public GameObject enemyPrefab; // Reference the prefab
+
+    public GameObject spawnPoint;
+
+    public Vector3 spawnOffset;
+
+    public bool randomSpawnOffset = false;
+
+    public int totalCount = 1;
+
+    public int spawnedCount = 0;
+
+    public float initialDelay = 0.0f;
+
+    public float spawnInterval = 0.0f;
+}
+[System.Serializable]
+public class EnemyGroup
+{
+    public List<EnemyData> enemies = new List<EnemyData>();
+
+    public float spawnDelay = 0f;
+}
 public class GameMaster : MonoBehaviour
 {
     // --- Singleton Setup ---
@@ -52,23 +78,22 @@ public class GameMaster : MonoBehaviour
     public Tilemap[] destructibleObstacleTilemaps;
 
     [Header("Enemy Spawning")]
-    [Tooltip("List of different enemy prefabs to spawn.")]
-    [SerializeField] private List<GameObject> enemyPrefabs = new List<GameObject>();
-    [Tooltip("List of possible locations where enemies can spawn.")]
-    [SerializeField] private List<Transform> spawnCells = new List<Transform>();
     [Tooltip("List of all possible exit cells.")]
     [SerializeField] private List<Transform> exitCells = new List<Transform>();
     [Tooltip("Time delay in seconds between spawning enemies.")]
-    [SerializeField] private float spawnInterval = 2.0f;
+    [SerializeField] private List<EnemyGroup> spawnTable = new List<EnemyGroup>();
     // Add more variables here for wave logic later (e.g., enemiesPerWave, timeBetweenWaves)
 
     [Header("Game State")]
     [Tooltip("Counter for how many enemies have successfully reached an exit.")]
     [SerializeField] [ReadOnly] private int enemiesReachedExit = 0; // ReadOnly attribute makes it visible but not editable in inspector
 
+
     // --- Private Runtime Variables ---
     private float timeSinceLastSpawn = 0f;
     private bool pathfinderInitialized = false;
+    private HashSet<GameObject> spawnedEnemies;
+    private int spawngroupIndex = 0;
 
     void Start()
     {
@@ -85,76 +110,126 @@ public class GameMaster : MonoBehaviour
             return;
         }
 
-        // Initialize the Pathfinder's flow field
-        // IMPORTANT: Ensure this runs *after* the level geometry (tilemaps, obstacles) is fully set up.
-        // If level generation happens in Start/Awake elsewhere, you might need to delay this call
-        // (e.g., using a coroutine with 'yield return null' or calling it from a level setup manager).
         Debug.Log("GameMaster requesting Flow Field calculation...");
         pathfinderInstance.CalculateFlowFields();
         pathfinderInitialized = true; // Assume calculation completes instantly for now
 
-        // Initialize spawn timer (optional: add initial delay)
-        timeSinceLastSpawn = 0f; // Or set to -initialDelay to wait before first spawn
-
-        // Reset counter
+        
+        timeSinceLastSpawn = 0f;
+        spawnedEnemies = new HashSet<GameObject>();
         enemiesReachedExit = 0;
 
          // Validate spawn points and prefabs
-         if (enemyPrefabs.Count == 0) {
-             Debug.LogWarning("GameMaster: No enemy prefabs assigned!", this);
-         }
-         if (spawnCells.Count == 0) {
-             Debug.LogWarning("GameMaster: No spawn points assigned!", this);
+         if (spawnTable == null || spawnTable.Count == 0)
+         {
+             Debug.LogWarning("GameMaster: No spawn table assigned or empty!", this);
          }
     }
 
     void Update()
     {
         // Don't run update logic if critical components are missing or not ready
-        if (!pathfinderInitialized || enemyPrefabs.Count == 0 || spawnCells.Count == 0)
+        if (!pathfinderInitialized || spawnTable == null || spawnTable.Count == 0)
         {
             return;
         }
 
-        // Simple timed spawning logic
-        timeSinceLastSpawn += Time.deltaTime;
-        if (timeSinceLastSpawn >= spawnInterval)
-        {
-            SpawnEnemy();
-            timeSinceLastSpawn = 0f; // Reset timer
-            // Could also subtract spawnInterval for more precise timing:
-            // timeSinceLastSpawn -= spawnInterval;
+        if (spawnedEnemies.Count > 0){
+            // Check if they are still valid
+            foreach (GameObject enemy in spawnedEnemies)
+            {
+                if (enemy == null)
+                {
+                    spawnedEnemies.Remove(enemy);
+                }
+            }
         }
 
-        // Add other game management logic here (e.g., checking win/loss conditions)
+        if (spawngroupIndex >= spawnTable.Count)
+        {
+            if(spawnedEnemies.Count == 0)
+            {
+                // Victory and end the game
+                Debug.Log("All enemies have been spawned and reached the exit! You win!");
+                //TODO: Implement victory screen
+                return;
+            }
+        }else{
+            EnemyGroup currentGroup = spawnTable[spawngroupIndex];
+            if (currentGroup.spawnDelay > 0)
+            {
+                currentGroup.spawnDelay -= Time.deltaTime;
+                if (currentGroup.spawnDelay <= 0)
+                {
+                    timeSinceLastSpawn = 0f;
+                }
+            }else
+            {
+                timeSinceLastSpawn += Time.deltaTime;
+                // Spawn enemies in the current group
+                bool allSpawned = true;
+                foreach (EnemyData enemyData in currentGroup.enemies)
+                {
+                    if (enemyData.spawnedCount < enemyData.totalCount)
+                    {
+                        allSpawned = false;
+                        while (enemyData.spawnedCount < enemyData.totalCount && timeSinceLastSpawn >= enemyData.initialDelay + enemyData.spawnInterval * enemyData.spawnedCount)
+                        {
+                            if(enemyData.randomSpawnOffset)
+                            {
+                                enemyData.spawnOffset = randomSpawnOffset(enemyData.enemyPrefab.transform.localScale);
+                            }
+                            SpawnEnemy(enemyData.enemyPrefab, enemyData.spawnPoint.transform.position, enemyData.spawnOffset);
+                            enemyData.spawnedCount++;
+                        }
+
+                    }
+                }
+                if (allSpawned)
+                {
+                    // Move to the next spawn group
+                    spawngroupIndex++;
+                    timeSinceLastSpawn = 0f;
+                }
+            }
+        }
+    }
+
+    Vector3 randomSpawnOffset(Vector3 scale)
+    {
+        Vector3 cellSize = groundTilemap.cellSize;
+        float xOffset = Random.Range(0, cellSize.x-scale.x);
+        float yOffset = Random.Range(0, cellSize.y-scale.y);
+        return new Vector3(xOffset, yOffset, 0);
     }
 
     /// <summary>
     /// Spawns a single enemy at a random spawn point.
     /// </summary>
-    void SpawnEnemy()
+    void SpawnEnemy(GameObject enemyPrefab, Vector3 spawnPoint, Vector3 spawnOffset)
     {
-        // --- Select Prefab ---
-        // Simple: pick the first prefab. Expand later for variety.
-        if (enemyPrefabs.Count == 0) return; // Should be caught in Start, but double-check
-        GameObject prefabToSpawn = enemyPrefabs[0]; // TODO: Implement logic for choosing different prefabs
-
-        // --- Select Spawn Point ---
-        if (spawnCells.Count == 0) return; // Should be caught in Start, but double-check
-        int spawnIndex = Random.Range(0, spawnCells.Count);
-        Transform selectedSpawnPoint = spawnCells[spawnIndex];
-
-        if (selectedSpawnPoint == null)
+        Vector3 scale = enemyPrefab.transform.localScale;
+        Vector3 cellSize = groundTilemap.cellSize;
+        if (scale.x > cellSize.x || scale.y > cellSize.y)
         {
-            Debug.LogError("A null spawn point was selected!", this);
+            Debug.LogWarning("Enemy prefab is too large to spawn safely!");
             return;
         }
 
-        // --- Instantiate ---
-        Debug.Log($"Spawning enemy {prefabToSpawn.name} at {selectedSpawnPoint.name}");
-        Instantiate(prefabToSpawn, selectedSpawnPoint.position, selectedSpawnPoint.rotation);
-
-        // TODO: Add logic for tracking spawned enemies, wave counts, etc.
+        Vector3Int cellPos = groundTilemap.WorldToCell(spawnPoint);
+        if (!groundTilemap.HasTile(cellPos))
+        {
+            Debug.LogWarning("Spawn point is not valid! No tile at the spawn location.");
+            return;
+        }
+        if(spawnOffset.x + scale.x > cellSize.x || spawnOffset.y + scale.y > cellSize.y)
+        {
+            Debug.LogWarning("Spawn offset is too large! Randomizing offset.");
+            spawnOffset = randomSpawnOffset(scale);
+        }
+        Vector3 spawnPosition = groundTilemap.GetCellCenterWorld(cellPos) + spawnOffset - new Vector3(cellSize.x/2, cellSize.y/2, 0) + new Vector3(scale.x/2, scale.y/2, 0);
+        GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+        spawnedEnemies.Add(enemy);
     }
 
     /// <summary>

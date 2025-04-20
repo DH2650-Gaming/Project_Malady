@@ -18,6 +18,7 @@ public class EnemyController : MonoBehaviour
     // --- Private State ---
     private int currentHealth;
     private GameMaster gm;
+    private Vector3 targetPosition;
 
     void Start()
     {
@@ -39,6 +40,7 @@ public class EnemyController : MonoBehaviour
             enabled = false; // Disable script if tilemap is missing
             return;
         }
+        targetPosition = transform.position;
     }
 
     void Update()
@@ -56,8 +58,16 @@ public class EnemyController : MonoBehaviour
     {
         if (groundTilemap == null || gm == null) return; // Safety check
 
-        Vector3Int currentCell = groundTilemap.WorldToCell(transform.position);
+        Vector3 currentWorldPos = transform.position;
+        if ((targetPosition - currentWorldPos).sqrMagnitude > 0.01f)
+        {
+            // Move towards the target position
+            transform.position = Vector3.MoveTowards(currentWorldPos, targetPosition, moveSpeed * Time.deltaTime);
+            return;
+        }
+        Vector3Int currentCell = groundTilemap.WorldToCell(currentWorldPos);
         FlowFieldNode node = gm.pathfinderInstance.GetFlowFieldNode(currentCell);
+        
 
         switch (node.Status)
         {
@@ -72,26 +82,11 @@ public class EnemyController : MonoBehaviour
                 // Ensure there's a valid direction to move
                 if (node.DirectionToTarget != Vector3.zero)
                 {
-                    // --- Refined Movement: Move towards next cell center ---
-                    // Calculate the next cell based on the direction vector
-                    // Assumes DirectionToTarget points from currentCell towards the next cell
                     Vector3Int nextCell = currentCell + Vector3Int.RoundToInt(node.DirectionToTarget);
-
-                    // Get the world position of the center of the next cell
-                    Vector3 targetWorldPos = groundTilemap.GetCellCenterWorld(nextCell);
-
-                    // Move the enemy's transform towards that target position
+                    Vector3 targetWorldPos = currentWorldPos + groundTilemap.GetCellCenterWorld(nextCell) - groundTilemap.GetCellCenterWorld(currentCell);
+                    targetPosition = targetWorldPos;
                     transform.position = Vector3.MoveTowards(transform.position, targetWorldPos, moveSpeed * Time.deltaTime);
-
-                    // Optional: Rotate to face the target position (if needed)
-                    // Vector3 moveDirection = (targetWorldPos - transform.position).normalized;
-                    // if (moveDirection != Vector3.zero) {
-                    //    Quaternion targetRotation = Quaternion.LookRotation(Vector3.forward, moveDirection); // Adjust axis based on 2D/3D setup
-                    //    transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-                    // }
-                    // --- End Refined Movement ---
                 }
-                // else: Direction is zero, but cost is not 0? Should not happen with correct CombineFields logic.
                 break;
 
             case FlowFieldStatus.Blocked:
