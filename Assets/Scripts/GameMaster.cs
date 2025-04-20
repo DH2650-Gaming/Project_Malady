@@ -169,6 +169,91 @@ public class GameMaster : MonoBehaviour
         // TODO: Add logic related to enemies reaching the exit (e.g., player loses health, check win/loss)
     }
 
+    void OnDrawGizmos()
+    {
+        if(!pathfinderInitialized || pathfinderInstance == null)
+        {
+            return; // Don't draw if pathfinding is not initialized
+        }
+        Vector3 cellSize = groundTilemap.cellSize;
+        // Use the smaller dimension for scaling to fit within the cell
+        float arrowBodyScale = 0.4f; // Arrow body length as % of cell size
+        float arrowHeadScale = 0.2f;
+        float arrowHeadAngle = 25.0f;
+        float minCellDim = Mathf.Min(Mathf.Abs(cellSize.x), Mathf.Abs(cellSize.y));
+        float bodyLength = minCellDim * arrowBodyScale;
+        float headLength = minCellDim * arrowHeadScale;
+
+        foreach (KeyValuePair<Vector3Int, FlowFieldNode> pair in pathfinderInstance.finalFlowField)
+        {
+            Vector3Int cellPos = pair.Key;
+            FlowFieldNode node = pair.Value;
+            Vector3 worldPos = groundTilemap.GetCellCenterWorld(cellPos);
+
+            // Skip drawing if direction is essentially zero (e.g., on the target)
+            // Allow drawing for cost 0 (target cells themselves) but maybe differently
+            // if (node.DirectionToTarget.sqrMagnitude < 0.001f && node.Cost > 0)
+            // {
+            //     // Potentially draw something else for nodes with cost but no direction (should be rare)
+            //     Gizmos.color = Color.magenta; // Indicate an issue?
+            //     Gizmos.DrawWireSphere(worldPos, minCellDim * 0.1f);
+            //     continue;
+            // }
+
+            // Set color based on status
+            switch (node.Status)
+            {
+                case FlowFieldStatus.Blocked:
+                    Gizmos.color = Color.red;
+                    // Draw a small cross or cube for blocked cells
+                    float blockedMarkerSize = minCellDim * 0.15f;
+                    Gizmos.DrawLine(worldPos - Vector3.right * blockedMarkerSize, worldPos + Vector3.right * blockedMarkerSize);
+                    Gizmos.DrawLine(worldPos - Vector3.up * blockedMarkerSize, worldPos + Vector3.up * blockedMarkerSize);
+                    continue; // Don't draw an arrow for blocked
+
+                case FlowFieldStatus.ReachesExit:
+                    Gizmos.color = Color.green;
+                     // If it's an exit cell itself (cost 0), draw a circle
+                    if (node.Cost == 0) {
+                        Gizmos.DrawWireSphere(worldPos, minCellDim * 0.2f);
+                        continue;
+                    }
+                    break;
+
+                case FlowFieldStatus.ReachesDestructible:
+                    Gizmos.color = Color.yellow;
+                     // If it's the target destructible itself (cost 0?), maybe draw a square?
+                     // Note: Cost might not be 0 if calculated *from exits*
+                     //if (node.Cost == 0) { // This condition might not be right
+                     //    Gizmos.DrawWireCube(worldPos, Vector3.one * minCellDim * 0.4f);
+                     //    continue;
+                     //}
+                    break;
+
+                default:
+                    Gizmos.color = Color.grey; // Should not happen
+                    break;
+            }
+
+            // Ensure direction is normalized (it should be from FlowFieldNode constructor)
+            Vector3 direction = node.DirectionToTarget; //.normalized; // Already normalized
+
+            // Calculate arrow points
+            Vector3 arrowEndPoint = worldPos + direction * bodyLength;
+
+            // Draw arrow body
+            Gizmos.DrawLine(worldPos, arrowEndPoint);
+
+            // Calculate arrowhead points using Quaternions for rotation
+            // Arrowhead lines point backwards from the arrowEndPoint
+            Vector3 rightVec = Quaternion.LookRotation(-direction) * Quaternion.Euler(0, arrowHeadAngle, 0) * Vector3.forward;
+            Vector3 leftVec = Quaternion.LookRotation(-direction) * Quaternion.Euler(0, -arrowHeadAngle, 0) * Vector3.forward;
+
+            // Draw arrowhead lines
+            Gizmos.DrawLine(arrowEndPoint, arrowEndPoint + rightVec * headLength);
+            Gizmos.DrawLine(arrowEndPoint, arrowEndPoint + leftVec * headLength);
+        }
+    }
     // Simple ReadOnly attribute for inspector display
     public class ReadOnlyAttribute : PropertyAttribute { }
 

@@ -41,12 +41,33 @@ public class Pathfinder
     private List<Vector3Int> exitCellPositions = new List<Vector3Int>();
 
     // Stores the final calculated data for each cell
-    private Dictionary<Vector3Int, FlowFieldNode> finalFlowField;
+    public Dictionary<Vector3Int, FlowFieldNode> finalFlowField;
     // Stores the cost to reach the nearest exit (used for tie-breaking)
     private Dictionary<Vector3Int, int> costToExit;
-    private List<Vector3Int> debug_gizmoCells = new List<Vector3Int>(); // For debugging purposes
     private bool isInitialized = false;
 
+    private class DijkstraNode : IComparable<DijkstraNode>
+    {
+        public Vector3Int Position;
+        public int Cost; // Primary cost (distance from source)
+        public int Lastdirection; // Secondary cost (e.g., distance to exit for destructibles)
+        public Vector3Int CameFrom;
+
+        public DijkstraNode(Vector3Int pos, int cost, int lastdirection, Vector3Int cameFrom)
+        {
+            Position = pos;
+            Cost = cost;
+            Lastdirection = lastdirection;
+            CameFrom = cameFrom;
+        }
+
+        // Compare based on primary cost, then tie-breaker cost
+        public int CompareTo(DijkstraNode other)
+        {
+            int costComparison = Cost.CompareTo(other.Cost);
+            return costComparison;
+        }
+    }
     // --- Public Access ---
 
     public Pathfinder(
@@ -149,32 +170,7 @@ public class Pathfinder
     /// <summary>
     /// Represents a node during Dijkstra calculation. Includes tie-breaking cost.
     /// </summary>
-    private class DijkstraNode : IComparable<DijkstraNode>
-    {
-        public Vector3Int Position;
-        public int Cost; // Primary cost (distance from source)
-        public int TieBreakerCost; // Secondary cost (e.g., distance to exit for destructibles)
-        public Vector3Int CameFrom;
-
-        public DijkstraNode(Vector3Int pos, int cost, int tieBreaker, Vector3Int cameFrom)
-        {
-            Position = pos;
-            Cost = cost;
-            TieBreakerCost = tieBreaker;
-            CameFrom = cameFrom;
-        }
-
-        // Compare based on primary cost, then tie-breaker cost
-        public int CompareTo(DijkstraNode other)
-        {
-            int costComparison = Cost.CompareTo(other.Cost);
-            if (costComparison == 0)
-            {
-                return TieBreakerCost.CompareTo(other.TieBreakerCost);
-            }
-            return costComparison;
-        }
-    }
+    
 
     /// <summary>
     /// Performs Dijkstra's algorithm to calculate costs and paths from multiple sources.
@@ -214,13 +210,10 @@ public class Pathfinder
                 continue;
             }
             // --- End Optimization ---
-
-            
-            //debug_gizmoCells.Add(currentNode.Position);
-            // --- End Debug ---
-
+            int direction = 0;
             foreach (Vector3Int neighborCell in GetNeighbors(currentNode.Position))
             {
+                direction++;
                 // --- Neighbor Validation ---
                 if (!groundTilemap.HasTile(neighborCell)) continue;
 
@@ -230,9 +223,12 @@ public class Pathfinder
                 if (!avoidAllObstacles && isNeighborBlockedbyIndestructible) continue;
             
                 // --- Cost Calculation ---
-                int newCost = currentNode.Cost + 1;
+                int newCost = currentNode.Cost + 10;
+                if (direction != currentNode.Lastdirection){
+                    newCost += 1;//Slightly discourage turning
+                }
                 if (isNeighborBlocked){
-                    newCost += 6;
+                    newCost += 60;
                 }
                 // --- Update Neighbor ---
                 // Check if we haven't visited neighbor OR found a shorter path
@@ -243,7 +239,7 @@ public class Pathfinder
                     cameFrom[neighborCell] = currentNode.Position;
 
                     // Create the new node representing the path to the neighbor
-                    DijkstraNode neighborNode = new DijkstraNode(neighborCell, newCost, 0, currentNode.Position);
+                    DijkstraNode neighborNode = new DijkstraNode(neighborCell, newCost, direction, currentNode.Position);
 
                     // Enqueue the neighbor. The PriorityQueue handles the sorting.
                     // If a better path is found later, a new node for the same position
@@ -252,11 +248,6 @@ public class Pathfinder
                 }
             } // End foreach neighbor
         } // End while frontier not empty
-    }
-    void OnDrawGizmos()
-    {
-        
-        DrawDebugGizmosForCell(debug_gizmoCells, 0.5f);
     }
 
     /// <summary>
@@ -382,19 +373,5 @@ public class Pathfinder
     public bool IsCellBlockedByAnyObstacle(Vector3Int cell)
     {
         return IsCellBlockedByIndestructible(cell) || IsCellDestructible(cell);
-    }
-    private void DrawDebugGizmosForCell(List<Vector3Int> cells, float gizmoScale = 0.5f)
-    {
-
-        // Calculate Gizmo size based on tilemap cell size and scale factor
-        Vector3 gizmoSize = groundTilemap.cellSize * Mathf.Clamp01(gizmoScale);
-        foreach (Vector3Int cell in cells)
-        {
-            Vector3 worldPos = groundTilemap.GetCellCenterWorld(cell);
-            Gizmos.DrawWireCube(worldPos, gizmoSize);
-        }
-        
-
-
     }
 }
