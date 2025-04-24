@@ -3,7 +3,8 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - Occupied
   layers:
   - Default
   - TransparentFX
@@ -43,6 +44,9 @@ TagManager:
     locked: 0
   - name: Env
     uniqueID: 2093725451
+    locked: 0
+  - name: TurretGrid
+    uniqueID: 3329138815
     locked: 0
   - name: Characters
     uniqueID: 1507209849
