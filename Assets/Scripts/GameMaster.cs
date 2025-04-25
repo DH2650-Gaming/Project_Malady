@@ -87,12 +87,14 @@ public class GameMaster : MonoBehaviour
     [Header("Game State")]
     [Tooltip("Counter for how many enemies have successfully reached an exit.")]
     [SerializeField] [ReadOnly] private int enemiesReachedExit = 0; // ReadOnly attribute makes it visible but not editable in inspector
+    [ReadOnly] public HashSet<GameObject> spawnedEnemies;
+    public GameObject playerhero;
+    public Camera gameCamera;
 
 
     // --- Private Runtime Variables ---
     private float timeSinceLastSpawn = 0f;
     private bool pathfinderInitialized = false;
-    private HashSet<GameObject> spawnedEnemies;
     private int spawngroupIndex = 0;
 
     void Start()

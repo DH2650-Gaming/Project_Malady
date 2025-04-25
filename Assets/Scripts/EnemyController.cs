@@ -9,14 +9,14 @@ public class EnemyController : MonoBehaviour
 {
     [Header("Enemy Stats")]
     [Tooltip("Maximum health points.")]
-    [SerializeField] private int maxHealth = 100;
+    [SerializeField] private float maxHealth = 100f;
     [Tooltip("Movement speed in units per second.")]
     [SerializeField] private float moveSpeed = 2.0f;
     
     private Tilemap groundTilemap;
 
     // --- Private State ---
-    private int currentHealth;
+    private float currentHealth;
     private GameMaster gm;
     private Vector3 targetPosition;
 
@@ -124,7 +124,7 @@ public class EnemyController : MonoBehaviour
     /// Reduces the enemy's health by a specified amount.
     /// </summary>
     /// <param name="amount">The amount of damage to take.</param>
-    public virtual void TakeDamage(int amount)
+    public virtual void TakeDamage(float amount)
     {
         if (amount <= 0) return; // No negative damage
 
