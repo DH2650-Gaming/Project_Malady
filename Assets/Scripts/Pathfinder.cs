@@ -9,10 +9,10 @@ using System;     // Used for IComparable
 public struct FlowFieldNode
 {
     public Vector3 DirectionToTarget; // Normalized direction vector towards the next cell on the path
-    public int Cost;                  // Cost (e.g., distance) to reach the target (exit or destructible)
+    public float Cost;                  // Cost (e.g., distance) to reach the target (exit or destructible)
     public FlowFieldStatus Status;    // Indicates what type of target this node path leads to
 
-    public FlowFieldNode(Vector3 direction, int cost, FlowFieldStatus status)
+    public FlowFieldNode(Vector3 direction, float cost, FlowFieldStatus status)
     {
         DirectionToTarget = direction;
         Cost = cost;
@@ -20,7 +20,7 @@ public struct FlowFieldNode
     }
 
     // Static property for a default blocked node
-    public static readonly FlowFieldNode BlockedNode = new FlowFieldNode(Vector3.zero, int.MaxValue, FlowFieldStatus.Blocked);
+    public static readonly FlowFieldNode BlockedNode = new FlowFieldNode(Vector3.zero, float.MaxValue, FlowFieldStatus.Blocked);
 }
 
 
@@ -43,17 +43,17 @@ public class Pathfinder
     // Stores the final calculated data for each cell
     public Dictionary<Vector3Int, FlowFieldNode> finalFlowField;
     // Stores the cost to reach the nearest exit (used for tie-breaking)
-    private Dictionary<Vector3Int, int> costToExit;
+    private Dictionary<Vector3Int, float> costToExit;
     private bool isInitialized = false;
 
     private class DijkstraNode : IComparable<DijkstraNode>
     {
         public Vector3Int Position;
-        public int Cost; // Primary cost (distance from source)
-        public int Lastdirection; // Secondary cost (e.g., distance to exit for destructibles)
+        public float Cost;
+        public int Lastdirection;
         public Vector3Int CameFrom;
 
-        public DijkstraNode(Vector3Int pos, int cost, int lastdirection, Vector3Int cameFrom)
+        public DijkstraNode(Vector3Int pos, float cost, int lastdirection, Vector3Int cameFrom)
         {
             Position = pos;
             Cost = cost;
@@ -105,7 +105,7 @@ public class Pathfinder
         System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         // --- Phase 1: Calculate Flow Field to Nearest Exit ---
-        costToExit = new Dictionary<Vector3Int, int>(); // Store costs separately for tie-breaking
+        costToExit = new Dictionary<Vector3Int, float>(); // Store costs separately for tie-breaking
         Dictionary<Vector3Int, Vector3Int> cameFromExit = new Dictionary<Vector3Int, Vector3Int>(); // Track path for direction calculation
         CalculateDijkstra(exitCellPositions, costToExit, cameFromExit, true); // Avoids ALL obstacles
 
@@ -114,7 +114,7 @@ public class Pathfinder
         FindUnreachedCells(cellsWithoutExitPath);
 
         // --- Phase 3: Calculate Flow Field to Nearest Destructible (for unreached cells) ---
-        Dictionary<Vector3Int, int> costToDestructible = new Dictionary<Vector3Int, int>();
+        Dictionary<Vector3Int, float> costToDestructible = new Dictionary<Vector3Int, float>();
         Dictionary<Vector3Int, Vector3Int> cameFromDestructible = new Dictionary<Vector3Int, Vector3Int>();
 
         CalculateDijkstra(exitCellPositions, costToDestructible, cameFromDestructible, false); // Avoids only INDESTRUCTIBLE obstacles
@@ -181,27 +181,27 @@ public class Pathfinder
     /// <param name="avoidAllObstacles">If true, avoids both destructible and indestructible. If false, avoids only indestructible.</param>
     private void CalculateDijkstra(
         List<Vector3Int> startCells,
-        Dictionary<Vector3Int, int> costSoFar,
+        Dictionary<Vector3Int, float> costSoFar,
         Dictionary<Vector3Int, Vector3Int> cameFrom,
         bool avoidAllObstacles)
     {
-        PriorityQueue<DijkstraNode, int> frontier = new PriorityQueue<DijkstraNode, int>();
+        PriorityQueue<DijkstraNode, float> frontier = new PriorityQueue<DijkstraNode, float>();
 
         // Initialize starting nodes
         foreach (var startCell in startCells)
         {
             if (!groundTilemap.HasTile(startCell)) continue;
 
-            costSoFar[startCell] = 0;
+            costSoFar[startCell] = 0f;
             cameFrom[startCell] = startCell;
 
-            DijkstraNode startNode = new DijkstraNode(startCell, 0, 0, startCell);
+            DijkstraNode startNode = new DijkstraNode(startCell, 0, -1, startCell);
             // Enqueue with priority (Cost, TieBreakerCost)
             frontier.Enqueue(startNode, startNode.Cost);
         }
 
         // Dijkstra Loop
-        while (frontier.TryDequeue(out DijkstraNode currentNode, out int Cost))
+        while (frontier.TryDequeue(out DijkstraNode currentNode, out float Cost))
         {
             // --- Optimization: Check for stale nodes ---
             // If we already found a shorter path to this node *after* this entry was enqueued, skip it.
@@ -211,6 +211,12 @@ public class Pathfinder
             }
             // --- End Optimization ---
             int direction = 0;
+            bool obstacleNearby = false;
+            foreach (Vector3Int neighborCell in GetNeighborsEight(currentNode.Position))
+            {
+                if (!groundTilemap.HasTile(neighborCell)) continue;
+                obstacleNearby = obstacleNearby || IsCellBlockedByAnyObstacle(neighborCell) || IsCellBlockedByIndestructible(neighborCell);
+            }
             foreach (Vector3Int neighborCell in GetNeighbors(currentNode.Position))
             {
                 direction++;
@@ -218,17 +224,17 @@ public class Pathfinder
                 if (!groundTilemap.HasTile(neighborCell)) continue;
 
                 bool isNeighborBlocked = IsCellBlockedByAnyObstacle(neighborCell);
-                bool isNeighborBlockedbyIndestructible = IsCellBlockedByIndestructible(neighborCell); 
+                bool isNeighborBlockedbyIndestructible = IsCellBlockedByIndestructible(neighborCell);
                 if (avoidAllObstacles && isNeighborBlocked) continue; // Skip if we want to avoid all obstacles
                 if (!avoidAllObstacles && isNeighborBlockedbyIndestructible) continue;
-            
+
                 // --- Cost Calculation ---
-                int newCost = currentNode.Cost + 10;
-                if (direction != currentNode.Lastdirection){
-                    newCost += 1;//Slightly discourage turning
+                float newCost = currentNode.Cost + 1;
+                if (direction != currentNode.Lastdirection && !obstacleNearby){
+                    newCost += 5;
                 }
                 if (isNeighborBlocked){
-                    newCost += 60;
+                    newCost += 6;
                 }
                 // --- Update Neighbor ---
                 // Check if we haven't visited neighbor OR found a shorter path
@@ -285,8 +291,8 @@ public class Pathfinder
     /// Combines the results of the exit and destructible Dijkstra runs into the final flow field data.
     /// </summary>
     private void CombineFlowFields(
-        Dictionary<Vector3Int, int> costToExit, Dictionary<Vector3Int, Vector3Int> cameFromExit,
-        Dictionary<Vector3Int, int> costToDestructible, Dictionary<Vector3Int, Vector3Int> cameFromDestructible,
+        Dictionary<Vector3Int, float> costToExit, Dictionary<Vector3Int, Vector3Int> cameFromExit,
+        Dictionary<Vector3Int, float> costToDestructible, Dictionary<Vector3Int, Vector3Int> cameFromDestructible,
         HashSet<Vector3Int> cellsWithoutExitPath)
     {
         finalFlowField = new Dictionary<Vector3Int, FlowFieldNode>();
@@ -347,6 +353,20 @@ public class Pathfinder
             cell + Vector3Int.down,
             cell + Vector3Int.left,
             cell + Vector3Int.right
+        };
+    }
+    private Vector3Int[] GetNeighborsEight(Vector3Int cell)
+    {
+        // Add diagonals if desired, but adjust cost calculation in Dijkstra if diagonal cost != cardinal cost
+        return new Vector3Int[] {
+            cell + Vector3Int.up,
+            cell + Vector3Int.down,
+            cell + Vector3Int.left,
+            cell + Vector3Int.right,
+            cell + new Vector3Int(1, 1, 0),
+            cell + new Vector3Int(1, -1, 0),
+            cell + new Vector3Int(-1, 1, 0),
+            cell + new Vector3Int(-1, -1, 0)
         };
     }
 

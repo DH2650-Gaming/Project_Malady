@@ -11,7 +11,7 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
     public GameObject missilePrefab;
     
     private float timeSinceLastHit = 0f;
-    void Update()
+    override protected void Update()
     {
         // Movement
         _moveInput.x = Input.GetAxisRaw("Horizontal");
@@ -24,9 +24,9 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
             mouseScreenPosition.y,
             _mainCamera.transform.position.z - transform.position.z
         ));
-        Vector2 directionToMouse = (Vector2)mouseWorldPosition - _playerBody.position;
+        Vector2 directionToMouse = (Vector2)mouseWorldPosition - _unitBody.position;
         float targetAngle = Mathf.Atan2(directionToMouse.y, directionToMouse.x) * Mathf.Rad2Deg - 90f;
-        _playerBody.MoveRotation(targetAngle);
+        _unitBody.MoveRotation(targetAngle);
 
         //Primary attack
         timeSinceLastHit += Time.deltaTime;
@@ -51,7 +51,7 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
         if (missileScript != null)
         {
             // *** MODIFIED: Pass the updated HandleMissileHit method ***
-            missileScript.Setup(null, HandleMissileHit, false);
+            missileScript.Setup(null, hitDamage, DamageType.Physical, false);
         }
         else
         {
@@ -60,15 +60,5 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
         }
     }
 
-    // *** MODIFIED: Function now accepts the impact angle ***
-    void HandleMissileHit(GameObject hitObject, float impactAngle)
-    {
-        if (hitObject == null) return;
-        EnemyController enemyController = hitObject.GetComponent<EnemyController>();
-        if (enemyController != null)
-        {
-            enemyController.TakeDamage(hitDamage);
-            
-        }
-    }
+
 }

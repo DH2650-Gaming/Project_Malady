@@ -2,11 +2,10 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using System;
 
-[RequireComponent(typeof(Rigidbody2D))]
-[RequireComponent(typeof(Collider2D))]
+
 public class MissilePlayerArrow : MissileBase
 {
-    void OnTriggerEnter2D(Collider2D other)
+    override protected void OnTriggerEnter2D(Collider2D other)
     {
         //Get the object that was hit
         GameObject hitObject = other.gameObject;
@@ -29,7 +28,15 @@ public class MissilePlayerArrow : MissileBase
         {
             if(isEnemy){//Only damage enemies
                 float impactAngle = Vector2.Angle(transform.up, other.transform.position - transform.position);
-                onHitCallback?.Invoke(hitObject, impactAngle);
+                UnitBase unitscript= hitObject.GetComponent<UnitBase>();
+                if (unitscript != null)
+                {
+                    unitscript.TakeDamage(damage, impactAngle, damageType);
+                }
+                else
+                {
+                    Debug.LogError("Missile hit an object without UnitBase script!", hitObject);
+                }
             }
             
             DestroyMissile();

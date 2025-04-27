@@ -51,5 +51,8 @@ TagManager:
   - name: Characters
     uniqueID: 1507209849
     locked: 0
+  - name: UI
+    uniqueID: 3941334221
+    locked: 0
   m_RenderingLayers:
   - Default

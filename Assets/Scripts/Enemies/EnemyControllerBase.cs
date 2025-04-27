@@ -5,25 +5,23 @@ using UnityEngine.Tilemaps; // Required for WorldToCell
 /// Controls a basic enemy unit's health and movement based on the Pathfinder.
 /// Designed to be extended for more specific enemy types.
 /// </summary>
-public class EnemyController : MonoBehaviour
+public class EnemyController : UnitBase
 {
-    [Header("Enemy Stats")]
-    [Tooltip("Maximum health points.")]
-    [SerializeField] private float maxHealth = 100f;
-    [Tooltip("Movement speed in units per second.")]
-    [SerializeField] private float moveSpeed = 2.0f;
-    
+    public float attackDamage = 10f;
+    public float attactFrequency = 1f;
+    public float attackRange = 0.05f;
+    public float aggroRange = 2f;
+    // --- Private State ---
+    private GameMaster gm;
+    private Vector2 targetPosition;
     private Tilemap groundTilemap;
 
-    // --- Private State ---
-    private float currentHealth;
-    private GameMaster gm;
-    private Vector3 targetPosition;
 
     void Start()
     {
         currentHealth = maxHealth;
-
+        unitType = UnitType.enemyunit;
+        _unitBody = GetComponent<Rigidbody2D>();
         // Get singleton instance
         gm = GameMaster.Instance;
         if (gm == null)
@@ -40,7 +38,7 @@ public class EnemyController : MonoBehaviour
             enabled = false; // Disable script if tilemap is missing
             return;
         }
-        targetPosition = transform.position;
+        targetPosition = _unitBody.position;
     }
 
     void Update()
@@ -58,11 +56,15 @@ public class EnemyController : MonoBehaviour
     {
         if (groundTilemap == null || gm == null) return; // Safety check
 
-        Vector3 currentWorldPos = transform.position;
+        Vector2 currentWorldPos = _unitBody.position;
+        Vector2 direction = targetPosition - currentWorldPos;
+        float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
+        float currentAngle = _unitBody.rotation;
+        float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, 180f * Time.fixedDeltaTime);
+        _unitBody.MoveRotation(newAngle);
         if ((targetPosition - currentWorldPos).sqrMagnitude > 0.01f)
         {
-            // Move towards the target position
-            transform.position = Vector3.MoveTowards(currentWorldPos, targetPosition, moveSpeed * Time.deltaTime);
+            _unitBody.MovePosition(Vector2.MoveTowards(currentWorldPos, targetPosition, moveSpeed * Time.deltaTime));
             return;
         }
         Vector3Int currentCell = groundTilemap.WorldToCell(currentWorldPos);
@@ -83,9 +85,8 @@ public class EnemyController : MonoBehaviour
                 if (node.DirectionToTarget != Vector3.zero)
                 {
                     Vector3Int nextCell = currentCell + Vector3Int.RoundToInt(node.DirectionToTarget);
-                    Vector3 targetWorldPos = currentWorldPos + groundTilemap.GetCellCenterWorld(nextCell) - groundTilemap.GetCellCenterWorld(currentCell);
+                    Vector2 targetWorldPos = (Vector3)currentWorldPos + groundTilemap.GetCellCenterWorld(nextCell) - groundTilemap.GetCellCenterWorld(currentCell);
                     targetPosition = targetWorldPos;
-                    transform.position = Vector3.MoveTowards(transform.position, targetWorldPos, moveSpeed * Time.deltaTime);
                 }
                 break;
 
@@ -119,19 +120,11 @@ public class EnemyController : MonoBehaviour
          }
     }
 
-
-    /// <summary>
-    /// Reduces the enemy's health by a specified amount.
-    /// </summary>
-    /// <param name="amount">The amount of damage to take.</param>
-    public virtual void TakeDamage(float amount)
+    public virtual void TakeDamage(float damage, float missileAngle, DamageType damageType)
     {
-        if (amount <= 0) return; // No negative damage
+        if (damage <= 0) return; // No negative damage
 
-        currentHealth -= amount;
-        Debug.Log($"Enemy {gameObject.name} took {amount} damage, {currentHealth}/{maxHealth} HP remaining.");
-
-        // Optional: Add visual feedback (flash color, particle effect)
+        currentHealth -= damage;
 
         if (currentHealth <= 0)
         {

@@ -30,7 +30,8 @@ public class MissileBase : MonoBehaviour
     // --- protected Variables ---
     protected Rigidbody2D rb;
     protected float timeAlive = 0f;
-    protected Action<GameObject, float> onHitCallback;
+    protected float damage = 0f;
+    protected DamageType damageType = DamageType.None;
     protected bool hasPassedTarget = false;     // Flag to prevent re-engaging after passing
     protected Rigidbody2D targetRigidbody;
 
@@ -51,10 +52,11 @@ public class MissileBase : MonoBehaviour
         }
     }
 
-    public void Setup(Transform initialTarget, Action<GameObject, float> hitCallback, bool startInTrackingMode = true)
+    public void Setup(Transform initialTarget, float damage, DamageType damageType, bool startInTrackingMode = true)
     {
         this.target = initialTarget;
-        this.onHitCallback = hitCallback;
+        this.damage = damage;
+        this.damageType = damageType;
         this.isTracking = startInTrackingMode;
         this.timeAlive = 0f;
         this.hasPassedTarget = false;

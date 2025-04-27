@@ -1,6 +1,8 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic; // Required for Lists
+using System.Globalization;
 
 /// <summary>
 /// Manages the overall game state, including pathfinder initialization,
@@ -82,11 +84,39 @@ public class GameMaster : MonoBehaviour
     [SerializeField] private List<Transform> exitCells = new List<Transform>();
     [Tooltip("Time delay in seconds between spawning enemies.")]
     [SerializeField] private List<EnemyGroup> spawnTable = new List<EnemyGroup>();
+
+    [Header("Level Settings")]
+    [Tooltip("Starting lives of the player.")]
+    public int startingLives = 10;
+    [Tooltip("Starting gold of the player.")]
+    public int startingGold = 0;
+
+    [Header("Player Settings")]
+    [Tooltip("Reference to the player hero prefab.")]
+    public GameObject playerHeroPrefab;
+    [Tooltip("Reference to the player hero spawn point.")]
+    public Transform playerHeroSpawnPoint;
+    [Tooltip("Player hero respawn timer in seconds.")]
+    public float playerHeroRespawnTime = 50f;
+    [Tooltip("Reference to the tower prefabs.")]
+    public GameObject[] playertowerPrefabs;
+
+    [Header("UI Elements")]
+    [Tooltip("Reference to the UI canvas.")]
+    public GameObject ui;
+    [Tooltip("Reference to the buildbar item prefab.")]
+    public GameObject uibuildBarItemPrefab;
+    [ReadOnly] public GameObject uiGameOverPanel;
+    [ReadOnly] public GameObject uiLifeBar;
+    [ReadOnly] public GameObject uiCoinBar;
+    [ReadOnly] public GameObject uiStatsBar;
+    [ReadOnly] public GameObject uiBuildBar;
     // Add more variables here for wave logic later (e.g., enemiesPerWave, timeBetweenWaves)
 
     [Header("Game State")]
     [Tooltip("Counter for how many enemies have successfully reached an exit.")]
-    [SerializeField] [ReadOnly] private int enemiesReachedExit = 0; // ReadOnly attribute makes it visible but not editable in inspector
+    [ReadOnly] public int currentLives = 0;
+    [ReadOnly] public int currentGold = 0;
     [ReadOnly] public HashSet<GameObject> spawnedEnemies;
     public GameObject playerhero;
     public Camera gameCamera;
@@ -96,6 +126,7 @@ public class GameMaster : MonoBehaviour
     private float timeSinceLastSpawn = 0f;
     private bool pathfinderInitialized = false;
     private int spawngroupIndex = 0;
+    private GameObject uiStatsBarSelectedUnit;
 
     void Start()
     {
@@ -119,26 +150,176 @@ public class GameMaster : MonoBehaviour
         
         timeSinceLastSpawn = 0f;
         spawnedEnemies = new HashSet<GameObject>();
-        enemiesReachedExit = 0;
+        currentLives = startingLives;
+        currentGold = startingGold;
 
-         // Validate spawn points and prefabs
-         if (spawnTable == null || spawnTable.Count == 0)
-         {
-             Debug.LogWarning("GameMaster: No spawn table assigned or empty!", this);
-         }
-    }
-
-    void Update()
-    {
-        // Don't run update logic if critical components are missing or not ready
-        if (!pathfinderInitialized || spawnTable == null || spawnTable.Count == 0)
+        bool shouldStart= true;
+        // Validate spawn points and prefabs
+        if (spawnTable == null || spawnTable.Count == 0)
         {
+            Debug.LogWarning("GameMaster: No spawn table assigned or empty!", this);
+            shouldStart = false;
+        }
+        if (exitCells == null || exitCells.Count == 0)
+        {
+            Debug.LogWarning("GameMaster: No exit cells assigned or empty!", this);
+            shouldStart = false;
+        }
+        if (playerHeroSpawnPoint == null)
+        {
+            Debug.LogWarning("GameMaster: No player hero spawn point assigned!", this);
+            shouldStart = false;
+        }
+        if (ui == null)
+        {
+            Debug.LogWarning("GameMaster: No UI assigned!", this);
+            shouldStart = false;
+        }
+        uiGameOverPanel = ui.transform.Find("GameOverPanel")?.gameObject;
+        if (uiGameOverPanel == null)
+        {
+            Debug.LogWarning("GameMaster: No GameOverPanel found in UI!", this);
+            shouldStart = false;
+        }
+        uiLifeBar = ui.transform.Find("LifeBar")?.gameObject;
+        if (uiLifeBar == null)
+        {
+            Debug.LogWarning("GameMaster: No LifeBar found in UI!", this);
+            shouldStart = false;
+        }
+        uiCoinBar = ui.transform.Find("CoinBar")?.gameObject;
+        if (uiCoinBar == null)
+        {
+            Debug.LogWarning("GameMaster: No CoinBar found in UI!", this);
+            shouldStart = false;
+        }
+        Transform bottombar = ui.transform.Find("BottomBar");
+        if (bottombar == null)
+        {
+            Debug.LogWarning("GameMaster: No BottomBar found in UI!", this);
+            shouldStart = false;
+        }else{
+            uiBuildBar = bottombar.Find("BuildBar")?.gameObject;
+            if (uiBuildBar == null)
+            {
+                Debug.LogWarning("GameMaster: No BuildBar found in BottomBar!", this);
+                shouldStart = false;
+            }
+            uiStatsBar = bottombar.Find("StatsBar")?.gameObject;
+            if (uiStatsBar == null)
+            {
+                Debug.LogWarning("GameMaster: No StatsBar found in BottomBar!", this);
+                shouldStart = false;
+            }
+        }
+        if (playerHeroPrefab == null)
+        {
+            Debug.LogWarning("GameMaster: No player hero prefab assigned!", this);
+        }
+        if (groundTilemap == null)
+        {
+            Debug.LogWarning("GameMaster: No ground tilemap assigned!", this);
+            shouldStart = false;
+        }
+        if (playertowerPrefabs == null || playertowerPrefabs.Length == 0)
+        {
+            Debug.LogWarning("GameMaster: No player tower prefabs assigned!", this);
+            shouldStart = false;
+        }
+        if (!shouldStart)
+        {
+            Debug.LogError("GameMaster: Initialization failed due to missing components!", this);
+            Time.timeScale = 0f;
+            this.enabled = false;
             return;
         }
 
+        playerhero = Instantiate(playerHeroPrefab, playerHeroSpawnPoint.position, Quaternion.identity);
+        uiStatsBarSelectedUnit = playerhero;
+        updateUI();
+    }
+
+    void updateUI()
+    {
+        GameObject tmp;
+        CultureInfo cultureInfo_US = CultureInfo.GetCultureInfo("en-US");
+        string text;
+        tmp = uiLifeBar.transform.Find("text")?.gameObject;
+        if(tmp == null)
+        {
+            Debug.LogWarning("GameMaster: No LifeBar text found in UI!", this);
+            return;
+        }
+        text = currentLives.ToString("N0", cultureInfo_US);
+        tmp.GetComponent<TMPro.TextMeshProUGUI>().text = text;
+        tmp = uiCoinBar.transform.Find("text")?.gameObject;
+        if(tmp == null)
+        {
+            Debug.LogWarning("GameMaster: No CoinBar text found in UI!", this);
+            return;
+        }
+        text = currentGold.ToString("N0", cultureInfo_US);
+        tmp.GetComponent<TMPro.TextMeshProUGUI>().text = text;
+
+        // Update the build bar
+
+        // Update the stats bar
+        if(uiStatsBarSelectedUnit == null)
+        {
+            tmp = uiStatsBar.transform.Find("greymask")?.gameObject;
+            if (tmp == null) return;
+            tmp.SetActive(true);
+            Transform hpbar;
+            hpbar = uiStatsBar.transform.Find("hpbar");
+            if (hpbar == null || hpbar.Find("fillimage") == null || hpbar.Find("label") == null) return;
+            Image fillimage = hpbar.Find("fillimage").gameObject.GetComponent<Image>();
+            fillimage.fillAmount = 0;
+            text = hpbar.Find("label").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text;
+            text = "0" + text.Substring(text.IndexOf("/"));
+            hpbar.Find("label").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = text;
+        }else{
+            tmp = uiStatsBar.transform.Find("greymask")?.gameObject;
+            if (tmp == null) return;
+            tmp.SetActive(false);
+            UnitBase unitscript = uiStatsBarSelectedUnit.GetComponent<UnitBase>();
+            if (unitscript == null) return;
+            text = unitscript.unitName;
+            tmp = uiStatsBar.transform.Find("name")?.gameObject;
+            if (tmp == null) return;
+            tmp.GetComponent<TMPro.TextMeshProUGUI>().text = text;
+            tmp = uiStatsBar.transform.Find("image")?.gameObject;
+            if (tmp == null) return;
+            Sprite sprite = unitscript.unitIcon;
+            if (sprite == null) return;
+            tmp.GetComponent<Image>().sprite = sprite;
+            Transform hpbar;
+            hpbar = uiStatsBar.transform.Find("hpbar");
+            if (hpbar == null) return;
+            Image fillimage = hpbar.Find("fillimage").gameObject.GetComponent<Image>();
+            float targetFillAmount = unitscript.currentHealth / unitscript.maxHealth;
+            if (fillimage.fillAmount != targetFillAmount)
+            {
+                fillimage.fillAmount = Mathf.Lerp(fillimage.fillAmount, targetFillAmount, Time.deltaTime * 10f); // Added multiplier to make speed more intuitive
+                if (Mathf.Abs(fillimage.fillAmount - targetFillAmount) < 0.001f)
+                {
+                    fillimage.fillAmount = targetFillAmount;
+                }
+            }
+            text = unitscript.currentHealth.ToString("N0", cultureInfo_US) + "/" + unitscript.maxHealth.ToString("N0", cultureInfo_US);
+            hpbar.Find("label").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = text;
+        }
+    }
+    void Update()
+    {
+        // Don't run update logic if critical components are missing or not ready
+        if (!pathfinderInitialized)
+        {
+            return;
+        }
+        updateUI();
         if (spawnedEnemies.Count > 0){
-            // Check if they are still valid
-            foreach (GameObject enemy in spawnedEnemies)
+            HashSet<GameObject> spawnedEnemiesCopy = new HashSet<GameObject>(spawnedEnemies);
+            foreach (GameObject enemy in spawnedEnemiesCopy)
             {
                 if (enemy == null)
                 {
@@ -240,10 +421,18 @@ public class GameMaster : MonoBehaviour
     /// </summary>
     public void EnemyReachedExit()
     {
-        enemiesReachedExit++;
-        Debug.Log($"An enemy reached the exit! Total reached: {enemiesReachedExit}");
-
-        // TODO: Add logic related to enemies reaching the exit (e.g., player loses health, check win/loss)
+        currentLives--;
+        updateUI();
+        if(currentLives <= 0)
+        {
+            //Pause the game and show game over screen
+            Debug.Log("Player lost!");
+            Time.timeScale = 0f;
+            if (uiGameOverPanel != null)
+            {
+                uiGameOverPanel.SetActive(true);
+            }
+        }
     }
 
     void OnDrawGizmos()
@@ -329,6 +518,8 @@ public class GameMaster : MonoBehaviour
             // Draw arrowhead lines
             Gizmos.DrawLine(arrowEndPoint, arrowEndPoint + rightVec * headLength);
             Gizmos.DrawLine(arrowEndPoint, arrowEndPoint + leftVec * headLength);
+            string text = node.Cost.ToString();
+            //drawString(text, worldPos + new Vector3(0, 0, 0.1f), Color.white);
         }
     }
     // Simple ReadOnly attribute for inspector display
