@@ -11,6 +11,7 @@ public class EnemyController : UnitBase
     public float attactFrequency = 1f;
     public float attackRange = 0.05f;
     public float aggroRange = 2f;
+    public int bounty = 1;
     // --- Private State ---
     private GameMaster gm;
     private Vector2 targetPosition;
@@ -108,14 +109,16 @@ public class EnemyController : UnitBase
         // Example: If it reached an exit, destroy self
          if (targetStatus == FlowFieldStatus.ReachesExit)
          {
-             Debug.Log($"Enemy {gameObject.name} reached an exit.");
-             Destroy(gameObject); // Or trigger scoring, etc.
+            Debug.Log($"Enemy {gameObject.name} reached an exit.");
+            gm.EnemyReachedExit();
+            // Do not call Die() cuz we don't want to play death animation
+            gm.currentGold += bounty;
+            Destroy(gameObject);
          }
          // If it reached a destructible, maybe start attacking it (needs separate logic)
          else if (targetStatus == FlowFieldStatus.ReachesDestructible)
          {
              Debug.Log($"Enemy {gameObject.name} reached a destructible target cell.");
-             // Implement attacking logic here if needed
              Destroy(gameObject);
          }
     }
@@ -128,6 +131,7 @@ public class EnemyController : UnitBase
 
         if (currentHealth <= 0)
         {
+            
             Die();
         }
     }
@@ -139,7 +143,7 @@ public class EnemyController : UnitBase
     {
         Debug.Log($"Enemy {gameObject.name} has died.");
         // Optional: Play death animation, spawn particle effects, drop loot, notify game manager
-
+        gm.currentGold += bounty;
         // Remove the enemy from the game
         Destroy(gameObject);
     }
