@@ -55,7 +55,7 @@ public class PlayerHeroControllerBase : UnitBase
     }
 
 
-    public virtual void TakeDamage(float damage, float missileAngle, DamageType damageType)
+    override public void TakeDamage(float damage, float missileAngle, DamageType damageType)
     {
         currentHealth -= damage;
 
@@ -66,7 +66,7 @@ public class PlayerHeroControllerBase : UnitBase
         }
     }
 
-    protected virtual void Die()
+    override protected void Die()
     {
         Debug.Log("Hero has died!");
         // Add death effects, game over logic, etc. here

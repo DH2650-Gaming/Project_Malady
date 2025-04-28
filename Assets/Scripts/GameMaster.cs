@@ -422,7 +422,6 @@ public class GameMaster : MonoBehaviour
     public void EnemyReachedExit()
     {
         currentLives--;
-        updateUI();
         if(currentLives <= 0)
         {
             //Pause the game and show game over screen
@@ -433,6 +432,12 @@ public class GameMaster : MonoBehaviour
                 uiGameOverPanel.SetActive(true);
             }
         }
+    }
+
+    public void AddGold(int amount)
+    {
+        currentGold += amount;
+        Debug.Log("Current Gold: " + currentGold);
     }
 
     void OnDrawGizmos()

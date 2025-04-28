@@ -123,7 +123,7 @@ public class EnemyController : UnitBase
          }
     }
 
-    public virtual void TakeDamage(float damage, float missileAngle, DamageType damageType)
+    override public void TakeDamage(float damage, float missileAngle, DamageType damageType)
     {
         if (damage <= 0) return; // No negative damage
 
@@ -131,7 +131,7 @@ public class EnemyController : UnitBase
 
         if (currentHealth <= 0)
         {
-            
+            currentHealth = 0;
             Die();
         }
     }
@@ -139,11 +139,11 @@ public class EnemyController : UnitBase
     /// <summary>
     /// Handles the enemy's death sequence.
     /// </summary>
-    protected virtual void Die()
+    override protected void Die()
     {
         Debug.Log($"Enemy {gameObject.name} has died.");
         // Optional: Play death animation, spawn particle effects, drop loot, notify game manager
-        gm.currentGold += bounty;
+        gm.AddGold(bounty);
         // Remove the enemy from the game
         Destroy(gameObject);
     }

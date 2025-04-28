@@ -12,17 +12,16 @@ public class MissilePlayerArrow : MissileBase
         GameMaster gm= GameMaster.Instance;
         bool isEnemy = gm.spawnedEnemies.Contains(hitObject);
         bool isHero = gm.playerhero == hitObject;
-        Tilemap towers = gm.destructibleObstacleTilemaps[0];
-        bool isTower = towers != null && towers.HasTile(towers.WorldToCell(hitObject.transform.position));
         bool isObsticle = false;
+        bool isTower = hitObject.GetComponent<Tilemap>() == gm.destructibleObstacleTilemaps[0];
         foreach (Tilemap tilemap in gm.indestructibleObstacleTilemaps)
         {
-            if (tilemap.HasTile(tilemap.WorldToCell(hitObject.transform.position)))
-            {
+            if(tilemap == hitObject.GetComponent<Tilemap>()){
                 isObsticle = true;
                 break;
             }
         }
+        
         // For the player side arrow, we only trigger the missile if it hits an enemy/tower/obstacle.
         if (isEnemy || isTower || isObsticle)
         {

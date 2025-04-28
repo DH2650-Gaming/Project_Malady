@@ -153,7 +153,7 @@ MonoBehaviour:
   unitType: 0
   unitIcon: {fileID: 0}
   moveSpeed: 10
-  maxHealth: 2000
+  maxHealth: 20
   currentHealth: 0
   attackDamage: 10
   attactFrequency: 1

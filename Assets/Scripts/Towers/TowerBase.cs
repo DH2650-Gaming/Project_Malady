@@ -41,6 +41,7 @@ public class TowerBase : MonoBehaviour
     private Collider2D thisCollider;
     private int curmagazineSize = 0;
     private bool isReloading = false;
+    private float gridscale = 0f;
     protected virtual void Start()
     {
         gm = GameMaster.Instance;
@@ -50,6 +51,9 @@ public class TowerBase : MonoBehaviour
         targetingLayer = LayerMask.GetMask("Units");
         obstacleLayer = LayerMask.GetMask("Towers", "Obstacles");
         thisCollider = GetComponent<Collider2D>();
+        gridscale = gm.groundTilemap.transform.localScale.x;
+        range *= gridscale;
+        minimumRange *= gridscale;
         if (gm == null)
         {
             Debug.LogError("TowerBase requires a GameMaster instance.", this);
@@ -87,8 +91,8 @@ public class TowerBase : MonoBehaviour
             return false;
         if (projectilePrefab != null)
         {
-            RaycastHit2D hit = Physics2D.Raycast(turret.transform.position, target.transform.position - turret.transform.position, range, obstacleLayer);
-            if (hit.collider != null && hit.collider.gameObject != target && hit.collider.gameObject != this.gameObject)
+            RaycastHit2D hit = Physics2D.Raycast(turret.transform.position + (target.transform.position - turret.transform.position).normalized, target.transform.position - turret.transform.position, range, obstacleLayer);
+            if (hit.collider != null && hit.collider.gameObject != target)
             {
                 return false;
             }
@@ -153,7 +157,7 @@ public class TowerBase : MonoBehaviour
                     timeSinceLastReload = 0f;
                 }else if (curmagazineSize < magazineSize && timeSinceLastReload >= reloadTimer1)
                 {
-                    curmagazineSize++;
+                    curmagazineSize = magazineSize;
                     timeSinceLastReload = 0f;
                 }
             }else
@@ -214,6 +218,7 @@ public class TowerBase : MonoBehaviour
                     if (timeSinceLastFire >= hitCooldown)
                     {
                         openFire();
+                        isReloading = false;
                         timeSinceLastFire = 0f;
                         timeSinceLastReload = 0f;
                         curmagazineSize--;
@@ -225,7 +230,7 @@ public class TowerBase : MonoBehaviour
 
     }
 
-    void openFire()
+    protected virtual void openFire()
     {
         if (projectilePrefab == null)
         {
