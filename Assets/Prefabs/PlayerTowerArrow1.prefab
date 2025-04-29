@@ -175,7 +175,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b5f2ce7a7d3a488685b13f101947079, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  missileSpeed: 10
+  missileSpeed: 20
   turnRate: 180
   lifetime: 5
   target: {fileID: 0}

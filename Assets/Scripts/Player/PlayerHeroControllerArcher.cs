@@ -30,11 +30,16 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
 
         //Primary attack
         timeSinceLastHit += Time.deltaTime;
-        if (Input.GetMouseButtonDown(0) && timeSinceLastHit >= hitCooldown)
+    }
+
+    override public bool Attack(){
+        if (timeSinceLastHit >= hitCooldown)
         {
             FireMissile();
-            timeSinceLastHit = 0f; // Reset cooldown timer
+            timeSinceLastHit = 0f;
+            return true;
         }
+        return false;
     }
 
     void FireMissile()

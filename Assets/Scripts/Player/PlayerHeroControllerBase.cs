@@ -53,7 +53,10 @@ public class PlayerHeroControllerBase : UnitBase
             // _unitBody.MovePosition(_unitBody.position + _moveInput * moveSpeed * Time.fixedDeltaTime);
         }
     }
-
+    public virtual bool Attack()
+    {
+        return false;
+    }
 
     override public void TakeDamage(float damage, float missileAngle, DamageType damageType)
     {

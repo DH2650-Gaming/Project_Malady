@@ -67,7 +67,6 @@ public class MissileBase : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("MissileBase Setup called with null target. Tracking will be disabled.", this);
             isTracking = false;
         }
 

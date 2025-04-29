@@ -78,6 +78,10 @@ public class GameMaster : MonoBehaviour
     public Tilemap[] indestructibleObstacleTilemaps;
     [Tooltip("Tilemaps containing obstacles that CAN be destroyed.")]
     public Tilemap[] destructibleObstacleTilemaps;
+    [Tooltip("The checkboard tilemap for tower building overlay only.")]
+    public Tilemap uiCheckboardTilemap;
+    [Tooltip("A dummy white square tile.")]
+    public TileBase cheapSquareTile;
 
     [Header("Enemy Spawning")]
     [Tooltip("List of all possible exit cells.")]
@@ -126,8 +130,21 @@ public class GameMaster : MonoBehaviour
     private float timeSinceLastSpawn = 0f;
     private bool pathfinderInitialized = false;
     private int spawngroupIndex = 0;
-    private GameObject uiStatsBarSelectedUnit;
 
+    private GameObject uiStatsBarSelectedUnit;
+    private GameObject[] uiBuildBarItems;
+    private GameObject selectedTower;
+    private Vector3Int lastMouseOverTile = new Vector3Int(int.MaxValue, 0, 0);
+    private Color lastMouseOverTileColor = Color.white;
+
+    private bool heroDead = false;
+    private float heroRespawnTimer = 0f;
+
+    private const float alpha = 0.1f;
+    private Color colorwhitea = new Color(1f, 1f, 1f, alpha);
+    private Color colorgreya = new Color(0.33f, 0.33f, 0.33f, alpha);
+    private Color colorgreena = new Color(0f, 1f, 0f, alpha);
+    private Color colorreda = new Color(1f, 0f, 0f, alpha);
     void Start()
     {
         // Ensure we have the Pathfinder instance
@@ -234,81 +251,11 @@ public class GameMaster : MonoBehaviour
             return;
         }
 
-        playerhero = Instantiate(playerHeroPrefab, playerHeroSpawnPoint.position, Quaternion.identity);
-        uiStatsBarSelectedUnit = playerhero;
-        updateUI();
+        SpawnHero();
+        InitializeUI();
+        UpdateUI();
     }
 
-    void updateUI()
-    {
-        GameObject tmp;
-        CultureInfo cultureInfo_US = CultureInfo.GetCultureInfo("en-US");
-        string text;
-        tmp = uiLifeBar.transform.Find("text")?.gameObject;
-        if(tmp == null)
-        {
-            Debug.LogWarning("GameMaster: No LifeBar text found in UI!", this);
-            return;
-        }
-        text = currentLives.ToString("N0", cultureInfo_US);
-        tmp.GetComponent<TMPro.TextMeshProUGUI>().text = text;
-        tmp = uiCoinBar.transform.Find("text")?.gameObject;
-        if(tmp == null)
-        {
-            Debug.LogWarning("GameMaster: No CoinBar text found in UI!", this);
-            return;
-        }
-        text = currentGold.ToString("N0", cultureInfo_US);
-        tmp.GetComponent<TMPro.TextMeshProUGUI>().text = text;
-
-        // Update the build bar
-
-        // Update the stats bar
-        if(uiStatsBarSelectedUnit == null)
-        {
-            tmp = uiStatsBar.transform.Find("greymask")?.gameObject;
-            if (tmp == null) return;
-            tmp.SetActive(true);
-            Transform hpbar;
-            hpbar = uiStatsBar.transform.Find("hpbar");
-            if (hpbar == null || hpbar.Find("fillimage") == null || hpbar.Find("label") == null) return;
-            Image fillimage = hpbar.Find("fillimage").gameObject.GetComponent<Image>();
-            fillimage.fillAmount = 0;
-            text = hpbar.Find("label").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text;
-            text = "0" + text.Substring(text.IndexOf("/"));
-            hpbar.Find("label").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = text;
-        }else{
-            tmp = uiStatsBar.transform.Find("greymask")?.gameObject;
-            if (tmp == null) return;
-            tmp.SetActive(false);
-            UnitBase unitscript = uiStatsBarSelectedUnit.GetComponent<UnitBase>();
-            if (unitscript == null) return;
-            text = unitscript.unitName;
-            tmp = uiStatsBar.transform.Find("name")?.gameObject;
-            if (tmp == null) return;
-            tmp.GetComponent<TMPro.TextMeshProUGUI>().text = text;
-            tmp = uiStatsBar.transform.Find("image")?.gameObject;
-            if (tmp == null) return;
-            Sprite sprite = unitscript.unitIcon;
-            if (sprite == null) return;
-            tmp.GetComponent<Image>().sprite = sprite;
-            Transform hpbar;
-            hpbar = uiStatsBar.transform.Find("hpbar");
-            if (hpbar == null) return;
-            Image fillimage = hpbar.Find("fillimage").gameObject.GetComponent<Image>();
-            float targetFillAmount = unitscript.currentHealth / unitscript.maxHealth;
-            if (fillimage.fillAmount != targetFillAmount)
-            {
-                fillimage.fillAmount = Mathf.Lerp(fillimage.fillAmount, targetFillAmount, Time.deltaTime * 10f); // Added multiplier to make speed more intuitive
-                if (Mathf.Abs(fillimage.fillAmount - targetFillAmount) < 0.001f)
-                {
-                    fillimage.fillAmount = targetFillAmount;
-                }
-            }
-            text = unitscript.currentHealth.ToString("N0", cultureInfo_US) + "/" + unitscript.maxHealth.ToString("N0", cultureInfo_US);
-            hpbar.Find("label").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = text;
-        }
-    }
     void Update()
     {
         // Don't run update logic if critical components are missing or not ready
@@ -316,7 +263,50 @@ public class GameMaster : MonoBehaviour
         {
             return;
         }
-        updateUI();
+        // hero respawn
+        if (playerhero == null)
+        {
+            if (heroDead)
+            {
+                heroRespawnTimer += Time.deltaTime;
+                if (heroRespawnTimer >= playerHeroRespawnTime)
+                {
+                    SpawnHero();
+                }
+            }else
+            {
+                heroDead = true;
+                heroRespawnTimer = 0f;
+            }
+        }
+        // Input listeners
+        Vector3 mouseWorldPosition = gameCamera.ScreenToWorldPoint(Input.mousePosition);
+        if (Input.GetMouseButtonDown(0))
+        {
+            Vector3Int cellPos = groundTilemap.WorldToCell(mouseWorldPosition);
+            if (groundTilemap.HasTile(cellPos))
+            {
+                // Check if the clicked tile is a valid spawn point
+                TileBase tile = groundTilemap.GetTile(cellPos);
+                if (tile != null)
+                {
+                    if(selectedTower == null){
+                        playerhero.GetComponent<PlayerHeroControllerBase>().Attack();
+                    }else{
+                        SpawnTower(cellPos);
+                    }
+                }
+            }
+        }
+        if (Input.GetMouseButtonDown(1))
+        {
+            if(selectedTower != null)
+            {
+                UnsetSelectedTower();
+            }
+        }
+        UpdateUI();
+        //Enemy spawning
         if (spawnedEnemies.Count > 0){
             HashSet<GameObject> spawnedEnemiesCopy = new HashSet<GameObject>(spawnedEnemies);
             foreach (GameObject enemy in spawnedEnemiesCopy)
@@ -332,9 +322,12 @@ public class GameMaster : MonoBehaviour
         {
             if(spawnedEnemies.Count == 0)
             {
-                // Victory and end the game
-                Debug.Log("All enemies have been spawned and reached the exit! You win!");
-                //TODO: Implement victory screen
+                Time.timeScale = 0f;
+                if (uiGameOverPanel != null)
+                {
+                    uiGameOverPanel.transform.Find("text").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = "You Win!";
+                    uiGameOverPanel.SetActive(true);
+                }
                 return;
             }
         }else{
@@ -525,6 +518,297 @@ public class GameMaster : MonoBehaviour
             Gizmos.DrawLine(arrowEndPoint, arrowEndPoint + leftVec * headLength);
             string text = node.Cost.ToString();
             //drawString(text, worldPos + new Vector3(0, 0, 0.1f), Color.white);
+        }
+    }
+    void InitializeUI(){
+        // Initialize build bar
+        uiBuildBarItems = new GameObject[Mathf.Min(6,playertowerPrefabs.Length)];
+        for(int i = 0; i < Mathf.Min(6,playertowerPrefabs.Length); i++)
+        {
+            GameObject towerPrefab = playertowerPrefabs[i];
+            if (towerPrefab == null)
+            {
+                Debug.LogWarning("GameMaster: Tower prefab is null!", this);
+                continue;
+            }
+            Vector3 delta = new Vector3(-150f * i, 0f, 0f);
+            uiBuildBarItems[i] = Instantiate(uibuildBarItemPrefab, uiBuildBar.transform);
+            uiBuildBarItems[i].transform.localPosition += delta;
+            uiBuildBarItems[i].transform.Find("image").gameObject.GetComponent<Button>().onClick.AddListener(() => {
+                SetSelectedTower(towerPrefab);
+            });
+            Debug.Log("GameMaster: BuildBar item created for tower prefab: " + i, this);
+        }
+
+        bool colorx = true;
+        bool colory = true;
+        for (int i = groundTilemap.cellBounds.x; i < groundTilemap.cellBounds.xMax; i++)
+        {
+            colorx = !colorx;
+            colory = !colorx;
+            for (int j = groundTilemap.cellBounds.y; j < groundTilemap.cellBounds.yMax; j++)
+            {
+                colory = !colory;
+                Vector3Int cellPos = new Vector3Int(i, j, 0);
+                if(!groundTilemap.HasTile(cellPos))
+                {
+                    continue;
+                }
+                bool isDraw = true;
+                foreach (Tilemap t in indestructibleObstacleTilemaps)
+                {
+                    if (t.HasTile(cellPos))
+                    {
+                        isDraw = false;
+                        break;
+                    }
+                }
+                if (!isDraw)
+                {
+                    continue;
+                }
+                uiCheckboardTilemap.SetTile(cellPos, cheapSquareTile);
+                uiCheckboardTilemap.SetColor(cellPos, colory ? colorwhitea : colorgreya);
+                uiCheckboardTilemap.SetTileFlags(cellPos, TileFlags.None);
+                
+            }
+        }
+        uiCheckboardTilemap.GetComponent<TilemapRenderer>().enabled = false;
+        
+    }
+    void UpdateUI()
+    {
+        GameObject tmp;
+        Sprite sprite;
+        CultureInfo cultureInfo_US = CultureInfo.GetCultureInfo("en-US");
+        string text;
+        if(selectedTower != null){
+            Vector3Int cellPos = groundTilemap.WorldToCell(gameCamera.ScreenToWorldPoint(Input.mousePosition));
+            
+            if (uiCheckboardTilemap.HasTile(cellPos))
+            {
+                if (lastMouseOverTile != cellPos)
+                {
+                    uiCheckboardTilemap.SetColor(lastMouseOverTile, lastMouseOverTileColor);
+                    lastMouseOverTile = cellPos;
+                    lastMouseOverTileColor = uiCheckboardTilemap.GetColor(cellPos);
+                }
+                if (IsTowerPlaceable(cellPos))
+                {
+                    uiCheckboardTilemap.SetColor(cellPos, colorgreena);
+                }
+                else
+                {
+                    uiCheckboardTilemap.SetColor(cellPos, colorreda);
+                }
+            }
+            else
+            {
+                if(lastMouseOverTile != cellPos)
+                {
+                    uiCheckboardTilemap.SetColor(lastMouseOverTile, lastMouseOverTileColor);
+                    lastMouseOverTile = new Vector3Int(int.MaxValue, 0, 0);
+                    lastMouseOverTileColor = Color.white;
+                }
+            }
+        }
+        tmp = uiLifeBar.transform.Find("text")?.gameObject;
+        if(tmp == null)
+        {
+            Debug.LogWarning("GameMaster: No LifeBar text found in UI!", this);
+            return;
+        }
+        text = currentLives.ToString("N0", cultureInfo_US);
+        tmp.GetComponent<TMPro.TextMeshProUGUI>().text = text;
+        tmp = uiCoinBar.transform.Find("text")?.gameObject;
+        if(tmp == null)
+        {
+            Debug.LogWarning("GameMaster: No CoinBar text found in UI!", this);
+            return;
+        }
+        text = currentGold.ToString("N0", cultureInfo_US);
+        tmp.GetComponent<TMPro.TextMeshProUGUI>().text = text;
+
+        // Update the build bar
+        for(int i = 0; i < Mathf.Min(6,playertowerPrefabs.Length); i++)
+        {
+            GameObject towerPrefab = playertowerPrefabs[i];
+            if (uiBuildBarItems[i] == null || towerPrefab == null)
+            {
+                continue;
+            }
+            TowerBase towerScript = towerPrefab.GetComponent<TowerBase>();
+            if (towerScript == null)
+            {
+                uiBuildBarItems[i].SetActive(false);
+                continue;
+            }
+            text = towerScript.cost.ToString();
+            uiBuildBarItems[i].transform.Find("pricetag").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = text;
+            sprite = towerScript.unitIcon;
+            if (sprite != null){
+                uiBuildBarItems[i].transform.Find("image").gameObject.GetComponent<Image>().sprite = sprite;
+            }
+            if (currentGold >= towerScript.cost)
+            {
+                uiBuildBarItems[i].transform.Find("image").gameObject.GetComponent<Button>().interactable = true;
+                uiBuildBarItems[i].transform.Find("greymask").gameObject.SetActive(false);
+            }
+            else
+            {
+                uiBuildBarItems[i].transform.Find("image").gameObject.GetComponent<Button>().interactable = false;
+                uiBuildBarItems[i].transform.Find("greymask").gameObject.SetActive(true);
+            }
+        }
+        // Update the stats bar
+        if(uiStatsBarSelectedUnit == null)
+        {
+            tmp = uiStatsBar.transform.Find("greymask")?.gameObject;
+            if (tmp == null) return;
+            tmp.SetActive(true);
+            Transform hpbar;
+            hpbar = uiStatsBar.transform.Find("hpbar");
+            if (hpbar == null || hpbar.Find("fillimage") == null || hpbar.Find("label") == null) return;
+            Image fillimage = hpbar.Find("fillimage").gameObject.GetComponent<Image>();
+            fillimage.fillAmount = 0;
+            text = hpbar.Find("label").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text;
+            text = "0" + text.Substring(text.IndexOf("/"));
+            hpbar.Find("label").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = text;
+        }else{
+            tmp = uiStatsBar.transform.Find("greymask")?.gameObject;
+            if (tmp == null) return;
+            tmp.SetActive(false);
+            UnitBase unitscript = uiStatsBarSelectedUnit.GetComponent<UnitBase>();
+            if (unitscript == null) return;
+            text = unitscript.unitName;
+            tmp = uiStatsBar.transform.Find("name")?.gameObject;
+            if (tmp == null) return;
+            tmp.GetComponent<TMPro.TextMeshProUGUI>().text = text;
+            tmp = uiStatsBar.transform.Find("image")?.gameObject;
+            if (tmp == null) return;
+            sprite = unitscript.unitIcon;
+            if (sprite == null) return;
+            tmp.GetComponent<Image>().sprite = sprite;
+            Transform hpbar;
+            hpbar = uiStatsBar.transform.Find("hpbar");
+            if (hpbar == null) return;
+            Image fillimage = hpbar.Find("fillimage").gameObject.GetComponent<Image>();
+            float targetFillAmount = unitscript.currentHealth / unitscript.maxHealth;
+            if (fillimage.fillAmount != targetFillAmount)
+            {
+                fillimage.fillAmount = Mathf.Lerp(fillimage.fillAmount, targetFillAmount, Time.deltaTime * 10f); // Added multiplier to make speed more intuitive
+                if (Mathf.Abs(fillimage.fillAmount - targetFillAmount) < 0.001f)
+                {
+                    fillimage.fillAmount = targetFillAmount;
+                }
+            }
+            text = unitscript.currentHealth.ToString("N0", cultureInfo_US) + "/" + unitscript.maxHealth.ToString("N0", cultureInfo_US);
+            hpbar.Find("label").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = text;
+        }
+    }
+    public void SpawnHero()
+    {
+        if (playerhero != null)
+        {
+            Destroy(playerhero);
+        }
+        playerhero = Instantiate(playerHeroPrefab, playerHeroSpawnPoint.position, Quaternion.identity);
+        heroDead = false;
+        heroRespawnTimer = 0f;
+        uiStatsBarSelectedUnit = playerhero;
+    }
+    public void SetSelectedTower(GameObject tower)
+    {
+        if (tower == null)
+        {
+            Debug.LogWarning("GameMaster: Tower is null!", this);
+            return;
+        }
+        Debug.Log("GameMaster: Tower selected: ", this);
+        selectedTower = tower;
+        uiCheckboardTilemap.GetComponent<TilemapRenderer>().enabled = true;
+    }
+    public void UnsetSelectedTower()
+    {
+        selectedTower = null;
+        if(lastMouseOverTileColor != Color.white)
+        {
+            uiCheckboardTilemap.SetColor(lastMouseOverTile, lastMouseOverTileColor);
+            lastMouseOverTile = new Vector3Int(int.MaxValue, 0, 0);
+            lastMouseOverTileColor = Color.white;
+        }
+        uiCheckboardTilemap.GetComponent<TilemapRenderer>().enabled = false;
+
+    }
+    public bool IsTowerPlaceable(Vector3Int cellPos)
+    {
+        TowerBase towerScript = selectedTower.GetComponent<TowerBase>();
+        if (towerScript == null || currentGold < towerScript.cost)
+        {
+            return false;
+        }
+        if (groundTilemap.HasTile(cellPos))
+        {
+            
+            foreach (Tilemap t in indestructibleObstacleTilemaps)
+            {
+                if (t.HasTile(cellPos))
+                {
+                    return false;
+                }
+            }
+            foreach (Tilemap t in destructibleObstacleTilemaps)
+            {
+                if (t.HasTile(cellPos))
+                {
+                    return false;
+                }
+            }
+            foreach (GameObject enemy in spawnedEnemies)
+            {
+                if (enemy == null)
+                {
+                    continue;
+                }
+                Vector3 enemyPos = enemy.transform.position;
+                Vector3Int enemyCellPos = groundTilemap.WorldToCell(enemyPos);
+                if (cellPos == enemyCellPos)
+                {
+                    return false;
+                }
+            }
+            return true;
+            
+        }
+        return false;
+    }
+
+    public void SpawnTower(Vector3Int cellPos)
+    {
+        if (selectedTower == null)
+        {
+            Debug.LogWarning("GameMaster: No tower selected!", this);
+            return;
+        }
+        if (!IsTowerPlaceable(cellPos))
+        {
+            return;
+        }
+        GameObject tower = Instantiate(selectedTower, groundTilemap.GetCellCenterWorld(cellPos), Quaternion.identity);
+        tower.transform.localScale = groundTilemap.transform.localScale;
+        Tilemap towertilemap = destructibleObstacleTilemaps[0];
+        towertilemap.SetTile(cellPos, cheapSquareTile);
+        towertilemap.SetColor(cellPos, new Color(0f, 0f, 0f, 0f));
+        pathfinderInstance.CalculateFlowFields();
+        TowerBase towerScript = tower.GetComponent<TowerBase>();
+        if (towerScript != null)
+        {
+            currentGold -= towerScript.cost;
+        }
+
+        if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
+        {
+            UnsetSelectedTower();
         }
     }
     // Simple ReadOnly attribute for inspector display

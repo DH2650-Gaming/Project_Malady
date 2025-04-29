@@ -152,7 +152,7 @@ MonoBehaviour:
   additionalTooltip: 
   unitType: 0
   unitIcon: {fileID: 0}
-  moveSpeed: 10
+  moveSpeed: 1
   maxHealth: 20
   currentHealth: 0
   attackDamage: 10

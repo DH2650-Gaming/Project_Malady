@@ -237,19 +237,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unitName: Peashooter
   additionalTooltip: 
-  unitIcon: {fileID: 0}
+  unitIcon: {fileID: 21300000, guid: dd964b05886a9416fa3e932cc35f372d, type: 3}
   projectilePrefab: {fileID: 5342076672375871000, guid: 2d0645d699f924f24998ef839756136b, type: 3}
   cost: 5
   range: 3
   minimumRange: 0
   squareRange: 0
-  hitDamage: 10
+  hitDamage: 8
   damageType: 1
-  hitCooldown: 0.5
+  hitCooldown: 0.2
   maxHealth: 500
   currentHealth: 0
   useMagazine: 1
   roundReload: 0
-  magazineSize: 6
-  reloadTimer1: 2
-  reloadTimer2: 3
+  magazineSize: 3
+  reloadTimer1: 1
+  reloadTimer2: 2

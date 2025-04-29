@@ -133,11 +133,11 @@ MonoBehaviour:
   additionalTooltip: 
   unitType: 1
   unitIcon: {fileID: -210077132, guid: ad8cadf63d4affc41be4301dad921fa0, type: 3}
-  moveSpeed: 1
+  moveSpeed: 1.3
   maxHealth: 500
   currentHealth: 0
-  hitDamage: 40
-  hitCooldown: 0.1
+  hitDamage: 25
+  hitCooldown: 0.6
   missilePrefab: {fileID: 5342076672375871000, guid: f0399b4e0910f4f2e81dc3f28fab865d, type: 3}
 --- !u!61 &5787809559503580477
 BoxCollider2D:

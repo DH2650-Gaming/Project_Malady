@@ -230,6 +230,28 @@ public class TowerBase : MonoBehaviour
 
     }
 
+    protected virtual Vector2 GetEdgePoint(Transform t)
+    {
+        Vector2 point = t.position;
+        float degree = t.rotation.eulerAngles.z + 90f;
+        degree %= 360f;
+        float radians = degree * Mathf.Deg2Rad;
+        Vector2 direction = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
+        direction.Normalize();
+        float absX = Mathf.Abs(direction.x);
+        float absY = Mathf.Abs(direction.y);
+        if (absX > absY)
+        {
+            direction = new Vector2(Mathf.Sign(direction.x), direction.y / absX);
+        }
+        else
+        {
+            direction = new Vector2(direction.x / absY, Mathf.Sign(direction.y));
+        }
+        point += direction * gridscale * 0.6f;
+        return point;
+    }
+
     protected virtual void openFire()
     {
         if (projectilePrefab == null)
@@ -238,7 +260,7 @@ public class TowerBase : MonoBehaviour
             return;
         }
 
-        GameObject missileInstance = Instantiate(projectilePrefab, turret.transform.position, turret.transform.rotation);
+        GameObject missileInstance = Instantiate(projectilePrefab, GetEdgePoint(turret.transform), turret.transform.rotation);
         MissileBase missileScript = missileInstance.GetComponent<MissileBase>();
 
         if (missileScript != null)
@@ -264,6 +286,8 @@ public class TowerBase : MonoBehaviour
 
     protected virtual void Die()
     {
+        gm.destructibleObstacleTilemaps[0].SetTile(gm.groundTilemap.WorldToCell(transform.position), null);
         Destroy(gameObject);
+        gm.pathfinderInstance.CalculateFlowFields();
     }
 }
