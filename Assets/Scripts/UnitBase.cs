@@ -26,6 +26,7 @@ public class UnitBase : MonoBehaviour
     public float maxHealth = 500;
     [ReadOnly] public float currentHealth = 0f;
     protected Rigidbody2D _unitBody;
+    protected Collider2D _unitCollider;
     
 
     public virtual void TakeDamage(float damage, float missileAngle, DamageType damageType)

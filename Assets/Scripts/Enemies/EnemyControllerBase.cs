@@ -8,21 +8,30 @@ using UnityEngine.Tilemaps; // Required for WorldToCell
 public class EnemyController : UnitBase
 {
     public float attackDamage = 10f;
+    public DamageType attackDamageType = DamageType.Physical;
     public float attactFrequency = 1f;
-    public float attackRange = 0.05f;
+    public float attackRange = 0.1f;
     public float aggroRange = 2f;
     public int bounty = 1;
     // --- Private State ---
     private GameMaster gm;
+    private Vector2 currentWorldPos;
     private Vector2 targetPosition;
     private Tilemap groundTilemap;
-
+    private Tilemap towerTilemap;
+    private bool isAttacking = false;
+    private GameObject target;
+    private LayerMask targetingUnitLayer;
+    private LayerMask targetingTowerLayer;
+    private FlowFieldNode currentNode;
+    private float timeSinceLastAttack = 0f;
 
     void Start()
     {
         currentHealth = maxHealth;
         unitType = UnitType.enemyunit;
         _unitBody = GetComponent<Rigidbody2D>();
+        _unitCollider = GetComponent<Collider2D>();
         // Get singleton instance
         gm = GameMaster.Instance;
         if (gm == null)
@@ -33,6 +42,7 @@ public class EnemyController : UnitBase
         }
 
         groundTilemap = gm.groundTilemap;
+        towerTilemap = gm.destructibleObstacleTilemaps[0];
         if (groundTilemap == null)
         {
             Debug.LogError($"Enemy {gameObject.name} needs a Ground Tilemap reference, and couldn't get it from GameMaster!", this);
@@ -40,24 +50,165 @@ public class EnemyController : UnitBase
             return;
         }
         targetPosition = _unitBody.position;
+        targetingUnitLayer = LayerMask.GetMask("PlayerUnits");
+        targetingTowerLayer = LayerMask.GetMask("Towers");
+    }
+
+    protected virtual bool isTargetValid(GameObject target)
+    {
+        if (target == null)
+            return false;
+        if (target.GetComponent<TowerBase>() != null && target.GetComponent<TowerBase>().currentHealth > 0)
+            return true;
+        if (target.GetComponent<UnitBase>() == null)
+            return false;
+        if (target.GetComponent<UnitBase>().currentHealth <= 0)
+            return false;
+        if (target.GetComponent<Collider2D>() == null || target.GetComponent<Collider2D>().Distance(_unitCollider).distance > aggroRange)
+            return false;
+        FlowFieldNode targetNode = gm.pathfinderInstance.GetFlowFieldNode(groundTilemap.WorldToCell(target.transform.position));
+        if (targetNode.Status == FlowFieldStatus.Blocked)
+            return false;
+        if (targetNode.Cost > currentNode.Cost)
+            return false;
+        return true;
+    }
+
+    protected virtual bool findTargetinCell(Vector3Int cellPos)
+    {
+        Collider2D[] collidersInRange;
+        Vector2 cellWorldPos = groundTilemap.GetCellCenterWorld(cellPos);
+        Vector2 cellSize = groundTilemap.cellSize;
+        collidersInRange = Physics2D.OverlapBoxAll(cellWorldPos, cellSize, 0f, targetingUnitLayer);
+        if (collidersInRange.Length == 0)
+            return false;
+
+        GameObject targetcandidate = null;
+        bool foundTarget = false;
+        float minCost = float.MaxValue;
+
+        // --- Filter Results ---
+        foreach (Collider2D col in collidersInRange)
+        {
+            if (col.gameObject == this.gameObject)
+                continue;
+            GameObject go = col.gameObject;
+            if(!isTargetValid(go))
+                continue;
+            float distance = _unitCollider.Distance(col).distance;
+            if(distance < minCost)
+            {
+                minCost = distance;
+                targetcandidate = go;
+                foundTarget = true;
+            }
+        }
+        if (foundTarget)
+        {
+            target = targetcandidate;
+        }
+        return foundTarget;
+    }
+
+    Vector2 getApproachVector(GameObject target)
+    {
+        Collider2D targetCollider = target.GetComponent<Collider2D>();
+        if (targetCollider == null)
+            return Vector2.zero;
+        Vector2 edgePoint = targetCollider.ClosestPoint(currentWorldPos);
+        Vector2 directionOut = (edgePoint - (Vector2)target.transform.position).normalized;
+        float unitRelevantExtent = Mathf.Max(_unitCollider.bounds.size.x, _unitCollider.bounds.size.y) / 2f;
+
+        return edgePoint + (unitRelevantExtent + attackRange) * directionOut;
     }
 
     void Update()
     {
-        if (gm != null) // Check instance validity
+        currentWorldPos = _unitBody.position;
+        if(!isTargetValid(target))
         {
-            HandleMovement();
+            target = null;
+            isAttacking = false;
+        }
+        Vector3Int currentCell = groundTilemap.WorldToCell(currentWorldPos);
+        if (target == null){
+            if (findTargetinCell(currentCell)){
+                isAttacking = true;
+            }
+        }
+        currentNode = gm.pathfinderInstance.GetFlowFieldNode(currentCell);
+        if (currentNode.Cost == 0)
+        {
+            HandleReachedTarget(currentNode.Status);
+            return;
+        }
+        if (target == null && currentNode.DirectionToTarget != Vector3.zero)
+        {
+            Vector3Int nextCell = currentCell + Vector3Int.RoundToInt(currentNode.DirectionToTarget);
+            Vector2 targetWorldPos = (Vector3)currentWorldPos + groundTilemap.GetCellCenterWorld(nextCell) - groundTilemap.GetCellCenterWorld(currentCell);
+            targetPosition = targetWorldPos;
+            if (towerTilemap != null && towerTilemap.HasTile(nextCell))
+            {
+                Collider2D[] collidersInRange = Physics2D.OverlapCircleAll(groundTilemap.GetCellCenterWorld(nextCell), 0.1f, targetingTowerLayer);
+                foreach (Collider2D col in collidersInRange)
+                {
+                    if (col.gameObject.GetComponent<TowerBase>() != null){
+                        target = col.gameObject;
+                        isAttacking = true;
+                        break;
+                    }
+                }
+                if (target == null)
+                {
+                    Debug.LogWarning($"Enemy {gameObject.name} found a tower but no valid target!", this);
+                }
+            }
+            else
+            {
+                if (findTargetinCell(nextCell))
+                {
+                    isAttacking = true;
+                }
+            }
+        }
+        if (isAttacking)
+        {
+            if (target != null)
+            {
+                targetPosition = getApproachVector(target);
+            }
+            else
+            {
+                isAttacking = false;
+            }
         }
     }
 
+    void FixedUpdate()
+    {
+        HandleMovement();
+        timeSinceLastAttack += Time.fixedDeltaTime;
+        if (isAttacking)
+        {
+            if (timeSinceLastAttack >= attactFrequency && (targetPosition - currentWorldPos).sqrMagnitude <= 0.01f)
+            {
+                timeSinceLastAttack = 0f;
+                if (target.GetComponent<UnitBase>() != null)
+                {
+                    target.GetComponent<UnitBase>().TakeDamage(attackDamage, _unitBody.rotation, attackDamageType);
+                }
+                else if (target.GetComponent<TowerBase>() != null)
+                {
+                    target.GetComponent<TowerBase>().TakeDamage(attackDamage, _unitBody.rotation, attackDamageType);
+                }
+            }
+        }
+    }
     /// <summary>
     /// Handles querying the flow field and moving the enemy accordingly.
     /// </summary>
     protected virtual void HandleMovement()
     {
-        if (groundTilemap == null || gm == null) return; // Safety check
-
-        Vector2 currentWorldPos = _unitBody.position;
         Vector2 direction = targetPosition - currentWorldPos;
         float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
         float currentAngle = _unitBody.rotation;
@@ -65,38 +216,7 @@ public class EnemyController : UnitBase
         _unitBody.MoveRotation(newAngle);
         if ((targetPosition - currentWorldPos).sqrMagnitude > 0.01f)
         {
-            _unitBody.MovePosition(Vector2.MoveTowards(currentWorldPos, targetPosition, moveSpeed * Time.deltaTime));
-            return;
-        }
-        Vector3Int currentCell = groundTilemap.WorldToCell(currentWorldPos);
-        FlowFieldNode node = gm.pathfinderInstance.GetFlowFieldNode(currentCell);
-        
-
-        switch (node.Status)
-        {
-            case FlowFieldStatus.ReachesExit:
-            case FlowFieldStatus.ReachesDestructible:
-                // Check if we are already at the target (cost 0)
-                if (node.Cost == 0) {
-                    HandleReachedTarget(node.Status);
-                    return; // Stop moving if already at target
-                }
-
-                // Ensure there's a valid direction to move
-                if (node.DirectionToTarget != Vector3.zero)
-                {
-                    Vector3Int nextCell = currentCell + Vector3Int.RoundToInt(node.DirectionToTarget);
-                    Vector2 targetWorldPos = (Vector3)currentWorldPos + groundTilemap.GetCellCenterWorld(nextCell) - groundTilemap.GetCellCenterWorld(currentCell);
-                    targetPosition = targetWorldPos;
-                }
-                break;
-
-            case FlowFieldStatus.Blocked:
-                // Enemy cannot reach any target from this cell
-                // Implement specific behavior (e.g., wait, play idle animation, attack nearby if possible)
-                // For now, just stop moving.
-                 // Debug.Log($"Enemy {gameObject.name} is blocked at {currentCell}.");
-                break;
+            _unitBody.MovePosition(Vector2.MoveTowards(currentWorldPos, targetPosition, moveSpeed * Time.fixedDeltaTime));
         }
     }
 

@@ -243,9 +243,9 @@ MonoBehaviour:
   range: 3
   minimumRange: 0
   squareRange: 0
-  hitDamage: 8
+  hitDamage: 5
   damageType: 1
-  hitCooldown: 0.2
+  hitCooldown: 0.3
   maxHealth: 500
   currentHealth: 0
   useMagazine: 1

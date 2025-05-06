@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4098711850523384986}
   - component: {fileID: 6383636269131553335}
   - component: {fileID: 5787809559503580477}
-  m_Layer: 6
+  m_Layer: 9
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -137,7 +137,7 @@ MonoBehaviour:
   maxHealth: 500
   currentHealth: 0
   hitDamage: 25
-  hitCooldown: 0.6
+  hitCooldown: 0.3
   missilePrefab: {fileID: 5342076672375871000, guid: f0399b4e0910f4f2e81dc3f28fab865d, type: 3}
 --- !u!61 &5787809559503580477
 BoxCollider2D:

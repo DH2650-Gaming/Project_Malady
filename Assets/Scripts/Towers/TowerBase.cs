@@ -48,7 +48,7 @@ public class TowerBase : MonoBehaviour
         currentHealth = maxHealth;
         curmagazineSize = magazineSize;
         turret = transform.Find("turret").gameObject;
-        targetingLayer = LayerMask.GetMask("Units");
+        targetingLayer = LayerMask.GetMask("EnemyUnits");
         obstacleLayer = LayerMask.GetMask("Towers", "Obstacles");
         thisCollider = GetComponent<Collider2D>();
         gridscale = gm.groundTilemap.transform.localScale.x;
@@ -78,8 +78,8 @@ public class TowerBase : MonoBehaviour
             return false;
         if (target.GetComponent<UnitBase>() == null)
             return false;
-        if (target.GetComponent<UnitBase>().unitType != UnitType.enemyunit && target.GetComponent<UnitBase>().unitType != UnitType.enemyunit2 && target.GetComponent<UnitBase>().unitType != UnitType.enemyhero)
-            return false;
+        // if (target.GetComponent<UnitBase>().unitType != UnitType.enemyunit && target.GetComponent<UnitBase>().unitType != UnitType.enemyunit2 && target.GetComponent<UnitBase>().unitType != UnitType.enemyhero)
+        //     return false;
         if (target.GetComponent<UnitBase>().currentHealth <= 0)
             return false;
         Collider2D targetCollider = target.GetComponent<Collider2D>();
