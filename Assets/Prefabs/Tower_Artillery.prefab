@@ -98,9 +98,9 @@ GameObject:
   - component: {fileID: 3614422383832715983}
   - component: {fileID: 7246385950478693047}
   - component: {fileID: 8749044723830975386}
-  - component: {fileID: 83324945967898944}
+  - component: {fileID: -2645539127629393261}
   m_Layer: 7
-  m_Name: TowerTemplate
+  m_Name: Tower_Artillery
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -167,7 +167,7 @@ SpriteRenderer:
   m_SortingLayer: 3
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.17021184, g: 0.36175105, b: 0.8018868, a: 1}
+  m_Color: {r: 0.8, g: 0.16862746, b: 0.22042516, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -223,7 +223,7 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &83324945967898944
+--- !u!114 &-2645539127629393261
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -232,24 +232,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 8714905688342887793}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c688939f677304c3b977f55011dd43ba, type: 3}
+  m_Script: {fileID: 11500000, guid: f321c3329b3b0411990aef9b4e6b0279, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  unitName: Peashooter
+  unitName: Heavy Scorpion
   additionalTooltip: 
   unitIcon: {fileID: 21300000, guid: dd964b05886a9416fa3e932cc35f372d, type: 3}
-  projectilePrefab: {fileID: 5342076672375871000, guid: 2d0645d699f924f24998ef839756136b, type: 3}
-  cost: 5
-  range: 3
+  projectilePrefab: {fileID: 0}
+  cost: 50
+  range: 5
   minimumRange: 0
+  turnSpeed: 60
   squareRange: 0
-  hitDamage: 5
-  damageType: 1
-  hitCooldown: 0.3
-  maxHealth: 200
+  hitDamage: 50
+  damageType: 2
+  hitCooldown: 4.5
+  maxHealth: 500
   currentHealth: 0
-  useMagazine: 1
+  useMagazine: 0
   roundReload: 0
-  magazineSize: 3
-  reloadTimer1: 1
-  reloadTimer2: 2
+  magazineSize: 5
+  reloadTimer1: 2
+  reloadTimer2: 1
+  damageRadius: 0.8

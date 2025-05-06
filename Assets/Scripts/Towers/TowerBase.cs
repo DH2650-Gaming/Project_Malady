@@ -16,6 +16,7 @@ public class TowerBase : MonoBehaviour
     [Header("Combat")]
     public float range = 3f;
     public float minimumRange = 0f;
+    public float turnSpeed = 360f;
     public bool squareRange = false;
     public float hitDamage = 10f;
     public DamageType damageType = DamageType.None;
@@ -32,11 +33,11 @@ public class TowerBase : MonoBehaviour
     public float reloadTimer2 = 1f;
 
     private GameObject turret;
-    private GameObject _target;
+    protected GameObject _target;
     private GameMaster gm;
-    private float timeSinceLastFire = 0f;
-    private float timeSinceLastReload = 0f;
-    private LayerMask targetingLayer;
+    protected float timeSinceLastFire = 0f;
+    protected float timeSinceLastReload = 0f;
+    protected LayerMask targetingLayer;
     private LayerMask obstacleLayer;
     private Collider2D thisCollider;
     private int curmagazineSize = 0;
@@ -191,7 +192,7 @@ public class TowerBase : MonoBehaviour
             {
                 return;
             }
-            timeSinceLastFire = hitCooldown;
+            //timeSinceLastFire = hitCooldown;
         }
         // --- Rotate Turret ---
         Vector2 directionToTarget = _target.transform.position - turret.transform.position;
@@ -200,7 +201,7 @@ public class TowerBase : MonoBehaviour
         turret.transform.rotation = Quaternion.RotateTowards(
             turret.transform.rotation,
             targetRotation,
-            360f * Time.deltaTime
+            turnSpeed * Time.deltaTime
         );
         float angleDifference = Quaternion.Angle(turret.transform.rotation, targetRotation);
         // --- Fire ---
