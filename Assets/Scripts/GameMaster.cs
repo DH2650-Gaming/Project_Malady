@@ -268,7 +268,6 @@ public class GameMaster : MonoBehaviour
         {
             if (heroDead)
             {
-                heroRespawnTimer += Time.deltaTime;
                 if (heroRespawnTimer >= playerHeroRespawnTime)
                 {
                     SpawnHero();
@@ -332,16 +331,8 @@ public class GameMaster : MonoBehaviour
             }
         }else{
             EnemyGroup currentGroup = spawnTable[spawngroupIndex];
-            if (currentGroup.spawnDelay > 0)
+            if (currentGroup.spawnDelay <= 0)
             {
-                currentGroup.spawnDelay -= Time.deltaTime;
-                if (currentGroup.spawnDelay <= 0)
-                {
-                    timeSinceLastSpawn = 0f;
-                }
-            }else
-            {
-                timeSinceLastSpawn += Time.deltaTime;
                 // Spawn enemies in the current group
                 bool allSpawned = true;
                 foreach (EnemyData enemyData in currentGroup.enemies)
@@ -349,7 +340,7 @@ public class GameMaster : MonoBehaviour
                     if (enemyData.spawnedCount < enemyData.totalCount)
                     {
                         allSpawned = false;
-                        while (enemyData.spawnedCount < enemyData.totalCount && timeSinceLastSpawn >= enemyData.initialDelay + enemyData.spawnInterval * enemyData.spawnedCount)
+                        if (enemyData.spawnedCount < enemyData.totalCount && timeSinceLastSpawn >= enemyData.initialDelay + enemyData.spawnInterval * enemyData.spawnedCount)
                         {
                             if(enemyData.randomSpawnOffset)
                             {
@@ -371,6 +362,26 @@ public class GameMaster : MonoBehaviour
         }
     }
 
+    void FixedUpdate()
+    {
+        if (heroDead)
+        {
+            heroRespawnTimer += Time.fixedDeltaTime;
+        }
+        EnemyGroup currentGroup = spawnTable[spawngroupIndex];
+        if (currentGroup.spawnDelay > 0)
+        {
+            currentGroup.spawnDelay -= Time.fixedDeltaTime;
+            if (currentGroup.spawnDelay <= 0)
+            {
+                timeSinceLastSpawn = 0f;
+            }
+        }
+        else
+        {
+            timeSinceLastSpawn += Time.fixedDeltaTime;
+        }
+    }
     Vector3 randomSpawnOffset(Vector3 scale)
     {
         Vector3 cellSize = groundTilemap.cellSize;

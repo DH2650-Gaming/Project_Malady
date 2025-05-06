@@ -526,7 +526,7 @@ MonoBehaviour:
       spawnedCount: 0
       initialDelay: 0
       spawnInterval: 0.6
-    spawnDelay: 8
+    spawnDelay: 6
   - enemies:
     - enemyPrefab: {fileID: 4267814941371566106, guid: cc01fb901ba674546bc70132996bc842, type: 3}
       spawnPoint: {fileID: 421752364}
@@ -544,7 +544,7 @@ MonoBehaviour:
       spawnedCount: 0
       initialDelay: 0
       spawnInterval: 1
-    spawnDelay: 10
+    spawnDelay: 6
   - enemies:
     - enemyPrefab: {fileID: 4267814941371566106, guid: cc01fb901ba674546bc70132996bc842, type: 3}
       spawnPoint: {fileID: 421752364}

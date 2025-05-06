@@ -146,42 +146,7 @@ public class TowerBase : MonoBehaviour
 
     protected virtual void Update()
     {
-        timeSinceLastFire += Time.deltaTime;
-        if(useMagazine)
-        {
-            timeSinceLastReload += Time.deltaTime;
-            if(!roundReload)
-            {
-                if (curmagazineSize <= 0 && timeSinceLastReload >= reloadTimer2)
-                {
-                    curmagazineSize = magazineSize;
-                    timeSinceLastReload = 0f;
-                }else if (curmagazineSize < magazineSize && timeSinceLastReload >= reloadTimer1)
-                {
-                    curmagazineSize = magazineSize;
-                    timeSinceLastReload = 0f;
-                }
-            }else
-            {
-                if (timeSinceLastReload >= reloadTimer1 && curmagazineSize < magazineSize)
-                {
-                    isReloading = true;
-                    curmagazineSize++;
-                    timeSinceLastReload = 0f;
-                }
-                if (isReloading && curmagazineSize < magazineSize && timeSinceLastReload >= reloadTimer2)
-                {
-                    curmagazineSize++;
-                    timeSinceLastReload = 0f;
-                }
-                if (isReloading && curmagazineSize >= magazineSize)
-                {
-                    isReloading = false;
-                    timeSinceLastReload = 0f;
-                }
-                
-            }
-        }
+
         if (!isTargetValid(_target))
         {
             _target = null;
@@ -231,6 +196,45 @@ public class TowerBase : MonoBehaviour
 
     }
 
+    protected virtual void FixedUpdate()
+    {
+        timeSinceLastFire += Time.fixedDeltaTime;
+        if(useMagazine)
+        {
+            timeSinceLastReload += Time.fixedDeltaTime;
+            if(!roundReload)
+            {
+                if (curmagazineSize <= 0 && timeSinceLastReload >= reloadTimer2)
+                {
+                    curmagazineSize = magazineSize;
+                    timeSinceLastReload = 0f;
+                }else if (curmagazineSize < magazineSize && timeSinceLastReload >= reloadTimer1)
+                {
+                    curmagazineSize = magazineSize;
+                    timeSinceLastReload = 0f;
+                }
+            }else
+            {
+                if (timeSinceLastReload >= reloadTimer1 && curmagazineSize < magazineSize)
+                {
+                    isReloading = true;
+                    curmagazineSize++;
+                    timeSinceLastReload = 0f;
+                }
+                if (isReloading && curmagazineSize < magazineSize && timeSinceLastReload >= reloadTimer2)
+                {
+                    curmagazineSize++;
+                    timeSinceLastReload = 0f;
+                }
+                if (isReloading && curmagazineSize >= magazineSize)
+                {
+                    isReloading = false;
+                    timeSinceLastReload = 0f;
+                }
+                
+            }
+        }
+    }
     protected virtual Vector2 GetEdgePoint(Transform t)
     {
         Vector2 point = t.position;
