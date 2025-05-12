@@ -522,7 +522,7 @@ MonoBehaviour:
       spawnPoint: {fileID: 421752364}
       spawnOffset: {x: 0, y: 0, z: 0}
       randomSpawnOffset: 1
-      totalCount: 15
+      totalCount: 20
       spawnedCount: 0
       initialDelay: 0
       spawnInterval: 0.6
@@ -532,7 +532,7 @@ MonoBehaviour:
       spawnPoint: {fileID: 421752364}
       spawnOffset: {x: 0, y: 0, z: 0}
       randomSpawnOffset: 1
-      totalCount: 50
+      totalCount: 30
       spawnedCount: 0
       initialDelay: 0
       spawnInterval: 0.6

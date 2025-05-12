@@ -24,6 +24,7 @@ public class EnemyController : UnitBase
     private LayerMask targetingUnitLayer;
     private LayerMask targetingTowerLayer;
     private FlowFieldNode currentNode;
+    private Vector2 unitOffset;
     private float timeSinceLastAttack = 0f;
 
     void Start()
@@ -49,7 +50,9 @@ public class EnemyController : UnitBase
             enabled = false; // Disable script if tilemap is missing
             return;
         }
+        currentWorldPos = _unitBody.position;
         targetPosition = _unitBody.position;
+        unitOffset = (Vector2) groundTilemap.GetCellCenterWorld(groundTilemap.WorldToCell(currentWorldPos)) - currentWorldPos;
         targetingUnitLayer = LayerMask.GetMask("PlayerUnits");
         targetingTowerLayer = LayerMask.GetMask("Towers");
     }
@@ -118,7 +121,7 @@ public class EnemyController : UnitBase
         Vector2 edgePoint = targetCollider.ClosestPoint(currentWorldPos);
         Vector2 directionOut = (edgePoint - (Vector2)target.transform.position).normalized;
         float unitRelevantExtent = Mathf.Max(_unitCollider.bounds.size.x, _unitCollider.bounds.size.y) / 2f;
-
+        //Debug.Log("Unit scale: " + unitRelevantExtent*2f);
         return edgePoint + (unitRelevantExtent + attackRange) * directionOut;
     }
 
@@ -145,7 +148,7 @@ public class EnemyController : UnitBase
         if (target == null && currentNode.DirectionToTarget != Vector3.zero)
         {
             Vector3Int nextCell = currentCell + Vector3Int.RoundToInt(currentNode.DirectionToTarget);
-            Vector2 targetWorldPos = (Vector3)currentWorldPos + groundTilemap.GetCellCenterWorld(nextCell) - groundTilemap.GetCellCenterWorld(currentCell);
+            Vector2 targetWorldPos = unitOffset + (Vector2) groundTilemap.GetCellCenterWorld(nextCell);
             targetPosition = targetWorldPos;
             if (towerTilemap != null && towerTilemap.HasTile(nextCell))
             {

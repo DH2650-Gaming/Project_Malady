@@ -337,6 +337,7 @@ public class GameMaster : MonoBehaviour
                 bool allSpawned = true;
                 foreach (EnemyData enemyData in currentGroup.enemies)
                 {
+                    Vector2 enemySize = enemyData.enemyPrefab.GetComponent<Renderer>().bounds.size;
                     if (enemyData.spawnedCount < enemyData.totalCount)
                     {
                         allSpawned = false;
@@ -344,9 +345,9 @@ public class GameMaster : MonoBehaviour
                         {
                             if(enemyData.randomSpawnOffset)
                             {
-                                enemyData.spawnOffset = randomSpawnOffset(enemyData.enemyPrefab.transform.localScale);
+                                enemyData.spawnOffset = randomSpawnOffset(enemySize);
                             }
-                            SpawnEnemy(enemyData.enemyPrefab, enemyData.spawnPoint.transform.position, enemyData.spawnOffset);
+                            SpawnEnemy(enemyData.enemyPrefab, enemyData.spawnPoint.transform.position, enemyData.spawnOffset, enemySize);
                             enemyData.spawnedCount++;
                         }
 
@@ -382,20 +383,19 @@ public class GameMaster : MonoBehaviour
             timeSinceLastSpawn += Time.fixedDeltaTime;
         }
     }
-    Vector3 randomSpawnOffset(Vector3 scale)
+    Vector3 randomSpawnOffset(Vector2 scale)
     {
         Vector3 cellSize = groundTilemap.cellSize;
-        float xOffset = Random.Range(0, cellSize.x-scale.x);
-        float yOffset = Random.Range(0, cellSize.y-scale.y);
+        float xOffset = Random.Range(0, cellSize.x-scale.x - 0.1f);
+        float yOffset = Random.Range(0, cellSize.y-scale.y - 0.1f);
         return new Vector3(xOffset, yOffset, 0);
     }
 
     /// <summary>
     /// Spawns a single enemy at a random spawn point.
     /// </summary>
-    void SpawnEnemy(GameObject enemyPrefab, Vector3 spawnPoint, Vector3 spawnOffset)
+    void SpawnEnemy(GameObject enemyPrefab, Vector3 spawnPoint, Vector3 spawnOffset, Vector2 scale)
     {
-        Vector3 scale = enemyPrefab.transform.localScale;
         Vector3 cellSize = groundTilemap.cellSize;
         if (scale.x > cellSize.x || scale.y > cellSize.y)
         {
