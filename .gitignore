@@ -1,1 +1,68 @@
+# Unity and VS Code
+.vscode/
+
+# System and User-specific
+.utmp/
+.vs/
+.gradle/
+
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+UserSettings/
+ExportedObj/
+
+# Build artifacts
+*.apk
+*.aab
+*.app
+*.unitypackage
+*.unitypackage.meta
+
+# Visual Studio / IDE / MonoDevelop
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.booproj
+*.pidb
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Rider / JetBrains
+.consulo/
+Assets/Plugins/Editor/JetBrains/
+
+# Crash reports and diagnostics
+sysinfo.txt
+crashlytics-build.properties
+
+# Ignore system files
+*.DS_Store
+
+# Memory and Performance files
+MemoryCaptures/
+Recordings/
+
+# Addressables - ignore build output but keep source data
+Assets/AddressableAssetsData/*.bin*
+
+# StreamingAssets - ignore only auto-generated cache
+Assets/StreamingAssets/aa.meta
+Assets/StreamingAssets/aa/*.bin*
+
+# Optional: Ignore Asset Store tools if not needed
+# Assets/AssetStoreTools*
+
+# Keep all .meta files to preserve Unity references!
+!*.meta
 
