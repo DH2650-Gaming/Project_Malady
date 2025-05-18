@@ -280,7 +280,7 @@ public class GameMaster : MonoBehaviour
         }
         // Input listeners
         Vector3 mouseWorldPosition = gameCamera.ScreenToWorldPoint(Input.mousePosition);
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && selectedTower != null)
         {
             Vector3Int cellPos = groundTilemap.WorldToCell(mouseWorldPosition);
             if (groundTilemap.HasTile(cellPos))
@@ -289,14 +289,15 @@ public class GameMaster : MonoBehaviour
                 TileBase tile = groundTilemap.GetTile(cellPos);
                 if (tile != null)
                 {
-                    if(selectedTower == null){
-                        playerhero.GetComponent<PlayerHeroControllerBase>().Attack();
-                    }else{
-                        SpawnTower(cellPos);
-                    }
+                    SpawnTower(cellPos);
                 }
             }
         }
+        
+        if (Input.GetMouseButton(0) && selectedTower == null) {
+            playerhero.GetComponent<PlayerHeroControllerBase>().Attack();
+        }
+        
         if (Input.GetMouseButtonDown(1))
         {
             if(selectedTower != null)
