@@ -498,7 +498,7 @@ MonoBehaviour:
   - {fileID: 617426762}
   spawnTable:
   - enemies:
-    - enemyPrefab: {fileID: 4267814941371566106, guid: cc01fb901ba674546bc70132996bc842, type: 3}
+    - enemyPrefab: {fileID: 4267814941371566106, guid: be6c87c0b568391419e614e1c0d7ca17, type: 3}
       spawnPoint: {fileID: 421752364}
       spawnOffset: {x: 0, y: 0, z: 0}
       randomSpawnOffset: 1
@@ -508,7 +508,7 @@ MonoBehaviour:
       spawnInterval: 1
     spawnDelay: 1
   - enemies:
-    - enemyPrefab: {fileID: 4267814941371566106, guid: 1973b48231fd0444fad5f8e9cabe3eec, type: 3}
+    - enemyPrefab: {fileID: 4267814941371566106, guid: c2b2cb5af81cb5c4d935e948134e638d, type: 3}
       spawnPoint: {fileID: 421752364}
       spawnOffset: {x: 0, y: 0, z: 0}
       randomSpawnOffset: 1
@@ -518,7 +518,7 @@ MonoBehaviour:
       spawnInterval: 1
     spawnDelay: 6
   - enemies:
-    - enemyPrefab: {fileID: 4267814941371566106, guid: cc01fb901ba674546bc70132996bc842, type: 3}
+    - enemyPrefab: {fileID: 4267814941371566106, guid: cad4cc4e40d0235449c953c792be22b6, type: 3}
       spawnPoint: {fileID: 421752364}
       spawnOffset: {x: 0, y: 0, z: 0}
       randomSpawnOffset: 1
@@ -528,7 +528,7 @@ MonoBehaviour:
       spawnInterval: 0.6
     spawnDelay: 6
   - enemies:
-    - enemyPrefab: {fileID: 4267814941371566106, guid: cc01fb901ba674546bc70132996bc842, type: 3}
+    - enemyPrefab: {fileID: 4267814941371566106, guid: cad4cc4e40d0235449c953c792be22b6, type: 3}
       spawnPoint: {fileID: 421752364}
       spawnOffset: {x: 0, y: 0, z: 0}
       randomSpawnOffset: 1
@@ -536,7 +536,7 @@ MonoBehaviour:
       spawnedCount: 0
       initialDelay: 0
       spawnInterval: 0.6
-    - enemyPrefab: {fileID: 4267814941371566106, guid: 1973b48231fd0444fad5f8e9cabe3eec, type: 3}
+    - enemyPrefab: {fileID: 4267814941371566106, guid: cad4cc4e40d0235449c953c792be22b6, type: 3}
       spawnPoint: {fileID: 421752364}
       spawnOffset: {x: 0, y: 0, z: 0}
       randomSpawnOffset: 1
@@ -546,7 +546,7 @@ MonoBehaviour:
       spawnInterval: 1
     spawnDelay: 6
   - enemies:
-    - enemyPrefab: {fileID: 4267814941371566106, guid: cc01fb901ba674546bc70132996bc842, type: 3}
+    - enemyPrefab: {fileID: 4267814941371566106, guid: cad4cc4e40d0235449c953c792be22b6, type: 3}
       spawnPoint: {fileID: 421752364}
       spawnOffset: {x: 0, y: 0, z: 0}
       randomSpawnOffset: 1
@@ -554,7 +554,7 @@ MonoBehaviour:
       spawnedCount: 0
       initialDelay: 0
       spawnInterval: 0.2
-    - enemyPrefab: {fileID: 4267814941371566106, guid: 1973b48231fd0444fad5f8e9cabe3eec, type: 3}
+    - enemyPrefab: {fileID: 4267814941371566106, guid: cad4cc4e40d0235449c953c792be22b6, type: 3}
       spawnPoint: {fileID: 421752364}
       spawnOffset: {x: 0, y: 0, z: 0}
       randomSpawnOffset: 1
@@ -803,7 +803,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 429628923825286921, guid: 35fb42d76e5940845beaa7ffbc8927c9, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

@@ -1,5 +1,8 @@
+using System;
 using UnityEngine;
-using UnityEngine.Tilemaps; // Required for WorldToCell
+using System.Collections;
+using UnityEngine.Tilemaps;
+using UnityEngine.UI; // Required for WorldToCell
 
 /// <summary>
 /// Controls a basic enemy unit's health and movement based on the Pathfinder.
@@ -26,10 +29,20 @@ public class EnemyController : UnitBase
     private FlowFieldNode currentNode;
     private Vector2 unitOffset;
     private float timeSinceLastAttack = 0f;
+    [SerializeField] private Animator animator;
+    private bool isMoving;
 
-    void Start()
+    private Vector2 lastDirection; // for die animation
+
+    //----Health bar ---
+    [SerializeField] private Image enemyHealthBar;
+
+   void Start()
     {
         currentHealth = maxHealth;
+
+        enemyHealthBar.fillAmount = currentHealth/maxHealth;
+
         unitType = UnitType.enemyunit;
         _unitBody = GetComponent<Rigidbody2D>();
         _unitCollider = GetComponent<Collider2D>();
@@ -128,6 +141,7 @@ public class EnemyController : UnitBase
     void Update()
     {
         currentWorldPos = _unitBody.position;
+       
         if(!isTargetValid(target))
         {
             target = null;
@@ -187,6 +201,7 @@ public class EnemyController : UnitBase
         }
     }
 
+   
     void FixedUpdate()
     {
         HandleMovement();
@@ -213,14 +228,42 @@ public class EnemyController : UnitBase
     protected virtual void HandleMovement()
     {
         Vector2 direction = targetPosition - currentWorldPos;
-        float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
-        float currentAngle = _unitBody.rotation;
-        float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, 180f * Time.fixedDeltaTime);
-        _unitBody.MoveRotation(newAngle);
-        if ((targetPosition - currentWorldPos).sqrMagnitude > 0.01f)
+
+        isMoving = direction.magnitude > 0.01f;
+        Debug.Log(isMoving);
+        animator.SetBool("isMoving", isMoving);
+
+        if (isMoving)
         {
-            _unitBody.MovePosition(Vector2.MoveTowards(currentWorldPos, targetPosition, moveSpeed * Time.fixedDeltaTime));
+
+            float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
+            float currentAngle = _unitBody.rotation;
+            float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, 180f * Time.fixedDeltaTime);
+            //_unitBody.MoveRotation(newAngle);
+            lastDirection = direction;
+            if ((targetPosition - currentWorldPos).sqrMagnitude > 0.01f)
+            {
+                _unitBody.MovePosition(Vector2.MoveTowards(currentWorldPos, targetPosition, moveSpeed * Time.fixedDeltaTime));
+            }
+            animator.SetFloat("Direction", GetDirectionIndex(direction));
+           
         }
+        else
+        {
+            animator.SetFloat("Direction", GetDirectionIndex(lastDirection));
+        }
+
+        Debug.Log(gameObject.name+" "+GetDirectionIndex(direction));
+
+    }
+
+
+    protected int GetDirectionIndex(Vector2 dir)
+    {
+        if (Mathf.Abs(dir.x) > Mathf.Abs(dir.y))
+            return dir.x > 0 ? 3 : 2; // Right=3, Left=2
+        else
+            return dir.y > 0 ? 0 : 1; // Up=0, Down=1
     }
 
     /// <summary>
@@ -250,6 +293,8 @@ public class EnemyController : UnitBase
     {
         if (damage <= 0) return; // No negative damage
 
+        Debug.Log("currentHealth" + currentHealth);
+
         currentHealth -= damage;
 
         if (currentHealth <= 0)
@@ -257,6 +302,8 @@ public class EnemyController : UnitBase
             currentHealth = 0;
             Die();
         }
+
+        enemyHealthBar.fillAmount = currentHealth / maxHealth;
     }
 
     /// <summary>
@@ -265,14 +312,37 @@ public class EnemyController : UnitBase
     override protected void Die()
     {
         Debug.Log($"Enemy {gameObject.name} has died.");
+
+        isMoving = false;
+        animator.SetBool("isMoving", false);
+
+
+        animator.SetFloat("Direction", GetDirectionIndex(lastDirection));
+
+
         // Optional: Play death animation, spawn particle effects, drop loot, notify game manager
         gm.AddGold(bounty);
         // Remove the enemy from the game
         Destroy(gameObject);
+
+        //StartCoroutine(DestroyAfterAnimation());
     }
 
-     // --- Gizmos for Debugging ---
-     void OnDrawGizmos()
+    /// <summary>
+    /// Get the time to play death animation, then destroy enemies
+    /// </summary>
+    //private IEnumerator DestroyAfterAnimation()
+    //{
+       
+    //    Debug.Log("Play die animation");
+
+    //    // wait to play die animation     
+    //    yield return new WaitForSeconds(1f);
+    //    Destroy(gameObject);
+    //}
+
+    // --- Gizmos for Debugging ---
+    void OnDrawGizmos()
      {
         // Draw the path direction if the pathfinder is initialized
         if (Application.isPlaying && gm != null && groundTilemap != null)
