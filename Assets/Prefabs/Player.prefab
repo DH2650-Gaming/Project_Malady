@@ -132,13 +132,21 @@ MonoBehaviour:
   unitName: Bran
   additionalTooltip: 
   unitType: 1
-  unitIcon: {fileID: -210077132, guid: ad8cadf63d4affc41be4301dad921fa0, type: 3}
+  unitIcon: {fileID: 429628923825286921, guid: 35fb42d76e5940845beaa7ffbc8927c9, type: 3}
   moveSpeed: 1.3
   maxHealth: 500
   currentHealth: 0
-  hitDamage: 25
-  hitCooldown: 0.3
+  autoAttackDamage: 10
+  autoAttackCooldown: 0.2
+  healthRegenRate: 2
+  healthRegenDelay: 5
+  ability1Cooldown: 5
+  ability2Cooldown: 10
   missilePrefab: {fileID: 5342076672375871000, guid: f0399b4e0910f4f2e81dc3f28fab865d, type: 3}
+  ability1TeleportDistance: 2
+  ability2RootDistance: 3
+  ability2RootRadius: 1
+  ability2RootDuration: 3
 --- !u!61 &5787809559503580477
 BoxCollider2D:
   m_ObjectHideFlags: 0

@@ -31,7 +31,8 @@ public class EnemyController : UnitBase
     private float timeSinceLastAttack = 0f;
     [SerializeField] private Animator animator;
     private bool isMoving;
-
+    protected float originalMoveSpeed;
+    protected float rootDebuffDuration = 0f;
     private Vector2 lastDirection; // for die animation
 
     //----Health bar ---
@@ -68,6 +69,7 @@ public class EnemyController : UnitBase
         unitOffset = (Vector2) groundTilemap.GetCellCenterWorld(groundTilemap.WorldToCell(currentWorldPos)) - currentWorldPos;
         targetingUnitLayer = LayerMask.GetMask("PlayerUnits");
         targetingTowerLayer = LayerMask.GetMask("Towers");
+        originalMoveSpeed = moveSpeed;
     }
 
     protected virtual bool isTargetValid(GameObject target)
@@ -205,6 +207,17 @@ public class EnemyController : UnitBase
     void FixedUpdate()
     {
         HandleMovement();
+        
+        rootDebuffDuration -= Time.fixedDeltaTime;
+        if (rootDebuffDuration <= 0f)
+        {
+            rootDebuffDuration = 0f;
+            moveSpeed = originalMoveSpeed;
+        }
+        if (rootDebuffDuration > 0f)
+        {
+            return;
+        }
         timeSinceLastAttack += Time.fixedDeltaTime;
         if (isAttacking)
         {
@@ -222,6 +235,14 @@ public class EnemyController : UnitBase
             }
         }
     }
+
+    public void ApplyRootDebuff(float duration)
+    {
+        if (duration <= rootDebuffDuration) return;
+
+        rootDebuffDuration = duration;
+        moveSpeed = 0f;
+    }
     /// <summary>
     /// Handles querying the flow field and moving the enemy accordingly.
     /// </summary>
@@ -229,8 +250,8 @@ public class EnemyController : UnitBase
     {
         Vector2 direction = targetPosition - currentWorldPos;
 
-        isMoving = direction.magnitude > 0.01f;
-        Debug.Log(isMoving);
+        isMoving = direction.magnitude > 0.01f && moveSpeed > 0f;
+        //Debug.Log(isMoving);
         animator.SetBool("isMoving", isMoving);
 
         if (isMoving)
@@ -253,7 +274,7 @@ public class EnemyController : UnitBase
             animator.SetFloat("Direction", GetDirectionIndex(lastDirection));
         }
 
-        Debug.Log(gameObject.name+" "+GetDirectionIndex(direction));
+        //Debug.Log(gameObject.name+" "+GetDirectionIndex(direction));
 
     }
 

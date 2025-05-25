@@ -293,10 +293,18 @@ public class GameMaster : MonoBehaviour
                 }
             }
         }
-        
-        if (Input.GetMouseButton(0) && selectedTower == null) {
-            playerhero.GetComponent<PlayerHeroControllerBase>().Attack();
+        if (Input.GetKeyDown(KeyCode.Q) && playerhero != null)
+        {
+            playerhero.GetComponent<PlayerHeroControllerBase>().Ability1();
         }
+        if (Input.GetKeyDown(KeyCode.E) && playerhero != null)
+        {
+            playerhero.GetComponent<PlayerHeroControllerBase>().Ability2();
+        }
+        // Now it's attack by default so this is disabled
+        // if (Input.GetMouseButton(0) && selectedTower == null) {
+        //     playerhero.GetComponent<PlayerHeroControllerBase>().Attack();
+        // }
         
         if (Input.GetMouseButtonDown(1))
         {
@@ -772,6 +780,15 @@ public class GameMaster : MonoBehaviour
             foreach (Tilemap t in destructibleObstacleTilemaps)
             {
                 if (t.HasTile(cellPos))
+                {
+                    return false;
+                }
+            }
+            if (playerhero != null)
+            {
+                Vector3 heroPos = playerhero.transform.position;
+                Vector3Int heroCellPos = groundTilemap.WorldToCell(heroPos);
+                if (cellPos == heroCellPos)
                 {
                     return false;
                 }
