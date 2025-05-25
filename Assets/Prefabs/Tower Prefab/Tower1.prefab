@@ -129,7 +129,7 @@ GameObject:
   - component: {fileID: 3614422383832715983}
   - component: {fileID: 7246385950478693047}
   - component: {fileID: 8749044723830975386}
-  - component: {fileID: 83324945967898944}
+  - component: {fileID: -6949425951894060935}
   m_Layer: 7
   m_Name: Tower1
   m_TagString: Untagged
@@ -255,7 +255,7 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &83324945967898944
+--- !u!114 &-6949425951894060935
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -264,25 +264,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 8714905688342887793}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c688939f677304c3b977f55011dd43ba, type: 3}
+  m_Script: {fileID: 11500000, guid: f321c3329b3b0411990aef9b4e6b0279, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  unitName: Peashooter
+  unitName: Heavy Scorpion
   additionalTooltip: 
-  unitIcon: {fileID: 21300000, guid: dd964b05886a9416fa3e932cc35f372d, type: 3}
-  projectilePrefab: {fileID: 5342076672375871000, guid: 2d0645d699f924f24998ef839756136b, type: 3}
-  cost: 5
-  range: 3
+  unitIcon: {fileID: 2027930145844100893, guid: 34372306d5d40d0418d39eb48ca6f17b, type: 3}
+  projectilePrefab: {fileID: 0}
+  cost: 25
+  range: 5
   minimumRange: 0
-  turnSpeed: 360
+  turnSpeed: 60
   squareRange: 0
-  hitDamage: 5
+  hitDamage: 50
   damageType: 1
-  hitCooldown: 0.3
-  maxHealth: 200
+  hitCooldown: 4.5
+  maxHealth: 500
   currentHealth: 0
-  useMagazine: 1
+  useMagazine: 0
   roundReload: 0
-  magazineSize: 3
-  reloadTimer1: 1
-  reloadTimer2: 2
+  magazineSize: 5
+  reloadTimer1: 2
+  reloadTimer2: 1
+  damageRadius: 0.8

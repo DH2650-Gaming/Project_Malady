@@ -269,7 +269,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unitName: Peashooter
   additionalTooltip: 
-  unitIcon: {fileID: 21300000, guid: dd964b05886a9416fa3e932cc35f372d, type: 3}
+  unitIcon: {fileID: -2560009122603031383, guid: d2c0f62ae07cf144980ee299972b826a, type: 3}
   projectilePrefab: {fileID: 5342076672375871000, guid: 2d0645d699f924f24998ef839756136b, type: 3}
   cost: 5
   range: 3
