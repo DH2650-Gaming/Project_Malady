@@ -272,7 +272,13 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      next_level_text_sparkles_only_0: -4699829469212576803
+      next_level_text_sparkles_only_1: 3224686421812238771
+      next_level_text_sparkles_only_2: -8682278539767410491
+      next_level_text_sparkles_only_3: 1777759630937407991
+      next_level_text_sparkles_only_4: -872240033136706944
+      next_level_text_sparkles_only_5: 138293504540097268
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -145,6 +145,8 @@ public class GameMaster : MonoBehaviour
     private Color colorgreya = new Color(0.33f, 0.33f, 0.33f, alpha);
     private Color colorgreena = new Color(0f, 1f, 0f, alpha);
     private Color colorreda = new Color(1f, 0f, 0f, alpha);
+    private bool paused = false;
+
     void Start()
     {
         // Ensure we have the Pathfinder instance
@@ -301,6 +303,11 @@ public class GameMaster : MonoBehaviour
         {
             playerhero.GetComponent<PlayerHeroControllerBase>().Ability2();
         }
+
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            Pause();
+        }
         // Now it's attack by default so this is disabled
         // if (Input.GetMouseButton(0) && selectedTower == null) {
         //     playerhero.GetComponent<PlayerHeroControllerBase>().Attack();
@@ -444,6 +451,18 @@ public class GameMaster : MonoBehaviour
             {
                 uiGameOverPanel.SetActive(true);
             }
+        }
+    }
+
+    public void Pause() {
+        if (paused)
+        {
+            Time.timeScale = 0f;
+            paused = false;
+        }
+        else {
+            Time.timeScale = 1f;
+            paused = true;
         }
     }
 
