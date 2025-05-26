@@ -617,10 +617,10 @@ MonoBehaviour:
   additionalTooltip: 
   unitType: 0
   unitIcon: {fileID: 0}
-  moveSpeed: 1
-  maxHealth: 20
+  moveSpeed: 0.6
+  maxHealth: 500
   currentHealth: 0
-  attackDamage: 10
+  attackDamage: 30
   attackDamageType: 1
   attactFrequency: 1
   attackRange: 0.05

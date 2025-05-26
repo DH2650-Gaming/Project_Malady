@@ -671,9 +671,121 @@ MonoBehaviour:
       initialDelay: 0
       spawnInterval: 0.2
     spawnDelay: 10
+  - enemies:
+    - enemyPrefab: {fileID: 4267814941371566106, guid: c2b2cb5af81cb5c4d935e948134e638d, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 10
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.2
+    - enemyPrefab: {fileID: 4267814941371566106, guid: be6c87c0b568391419e614e1c0d7ca17, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 1
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.2
+    - enemyPrefab: {fileID: 4267814941371566106, guid: a4b5ec10788ed24488cca45e0864a0e7, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 20
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.2
+    spawnDelay: 10
+  - enemies:
+    - enemyPrefab: {fileID: 4267814941371566106, guid: be6c87c0b568391419e614e1c0d7ca17, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 2
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.2
+    - enemyPrefab: {fileID: 4267814941371566106, guid: c2b2cb5af81cb5c4d935e948134e638d, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 20
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.2
+    - enemyPrefab: {fileID: 4267814941371566106, guid: cad4cc4e40d0235449c953c792be22b6, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 50
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.2
+    spawnDelay: 10
+  - enemies:
+    - enemyPrefab: {fileID: 4267814941371566106, guid: cad4cc4e40d0235449c953c792be22b6, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 100
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.2
+    - enemyPrefab: {fileID: 4267814941371566106, guid: 1f54887910178db458554d2b6d654cf3, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 50
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.2
+    - enemyPrefab: {fileID: 4267814941371566106, guid: a4b5ec10788ed24488cca45e0864a0e7, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 50
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.2
+    - enemyPrefab: {fileID: 4267814941371566106, guid: c2b2cb5af81cb5c4d935e948134e638d, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 25
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.2
+    spawnDelay: 10
+  - enemies:
+    - enemyPrefab: {fileID: 4267814941371566106, guid: be6c87c0b568391419e614e1c0d7ca17, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 5
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 1
+    - enemyPrefab: {fileID: 4267814941371566106, guid: c2b2cb5af81cb5c4d935e948134e638d, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 20
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.5
+    - enemyPrefab: {fileID: 4267814941371566106, guid: cad4cc4e40d0235449c953c792be22b6, type: 3}
+      spawnPoint: {fileID: 421752364}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      randomSpawnOffset: 1
+      totalCount: 50
+      spawnedCount: 0
+      initialDelay: 0
+      spawnInterval: 0.3
+    spawnDelay: 10
   startingLives: 10
   startingGold: 5
-  playerHeroPrefab: {fileID: 6466181356107375752, guid: addf09b14ad7c49f2b27a6436111e4af, type: 3}
+  playerHeroPrefab: {fileID: 6466181356107375752, guid: 4e0418998cd4c6d41b012b85bffb6919, type: 3}
   playerHeroSpawnPoint: {fileID: 1485396793}
   playerHeroRespawnTime: 50
   playertowerPrefabs:
