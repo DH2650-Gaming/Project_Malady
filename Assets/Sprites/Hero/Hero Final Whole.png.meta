@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 34372306d5d40d0418d39eb48ca6f17b
+guid: 8f3a47bfff71b504da323d271fc3c497
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2027930145844100893
-    second: Tower1_0
+      213: -2546835941214452772
+    second: Hero Final Whole_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Tower1_0
+      name: Hero Final Whole_0
       rect:
         serializedVersion: 2
-        x: 16
-        y: 4
-        width: 95
-        height: 121
+        x: 12
+        y: 2
+        width: 232
+        height: 253
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d1ff75429b7a42c10800000000000000
-      internalID: 2027930145844100893
+      spriteID: cd307b68432d7acd0800000000000000
+      internalID: -2546835941214452772
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Tower1_0: 2027930145844100893
+      Hero Final Whole_0: -2546835941214452772
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

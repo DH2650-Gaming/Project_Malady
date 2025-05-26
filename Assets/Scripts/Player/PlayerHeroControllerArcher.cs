@@ -1,7 +1,7 @@
 using UnityEngine;
 
 public class PlayerHeroControllerArcher : PlayerHeroControllerBase
-{   
+{
 
     [Header("Archer specific settings")]
     [Tooltip("Missile prefab")]
@@ -15,6 +15,7 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
     [Tooltip("Ability 2 root duration in seconds")]
     public float ability2RootDuration = 3f;
 
+    [SerializeField] private Animator animator;
 
     protected LayerMask ability1CheckLayerMask;
     protected LayerMask ability2CheckLayerMask;
@@ -47,7 +48,16 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
         // Movement
         _moveInput.x = Input.GetAxisRaw("Horizontal");
         _moveInput.y = Input.GetAxisRaw("Vertical");
-        _moveInput.Normalize(); 
+        _moveInput.Normalize();
+
+        float moveSpeed = _moveInput.magnitude;
+        animator.SetFloat("moveSpeed", moveSpeed);
+        Debug.Log("Set moveSpeed: " + moveSpeed);
+
+        // 打印 Animator 里当前的 moveSpeed 参数值
+        float currentMoveSpeed = animator.GetFloat("moveSpeed");
+        Debug.Log("Animator moveSpeed: " + currentMoveSpeed);
+
 
         Vector3 mouseScreenPosition = Input.mousePosition;
         Vector3 mouseWorldPosition = _mainCamera.ScreenToWorldPoint(new Vector3(
@@ -80,11 +90,13 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
         }
     }
 
-    override public bool Attack(){
+    override public bool Attack()
+    {
         if (timeSinceLastAutoAttack >= autoAttackCooldown)
         {
             FireMissile();
             timeSinceLastAutoAttack = 0f;
+            //animator.SetTrigger("isAttack");
             return true;
         }
         return false;

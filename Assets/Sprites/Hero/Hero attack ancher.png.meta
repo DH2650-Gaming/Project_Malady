@@ -1,10 +1,13 @@
 fileFormatVersion: 2
-guid: 34372306d5d40d0418d39eb48ca6f17b
+guid: 1c9b16fe7b3d1ca4a965a60989c21465
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2027930145844100893
-    second: Tower1_0
+      213: -1144513124866386196
+    second: Hero attack ancher_0
+  - first:
+      213: -8037142679760497470
+    second: Hero attack ancher_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +116,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Tower1_0
+      name: Hero attack ancher_0
       rect:
         serializedVersion: 2
-        x: 16
-        y: 4
-        width: 95
-        height: 121
+        x: 40
+        y: 169
+        width: 176
+        height: 85
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +131,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d1ff75429b7a42c10800000000000000
-      internalID: 2027930145844100893
+      spriteID: ce61197706fdd10f0800000000000000
+      internalID: -1144513124866386196
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Hero attack ancher_1
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 156
+        width: 16
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c49ebbb055567090800000000000000
+      internalID: -8037142679760497470
       vertices: []
       indices: 
       edges: []
@@ -148,7 +173,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Tower1_0: 2027930145844100893
+      Hero attack ancher_0: -1144513124866386196
+      Hero attack ancher_1: -8037142679760497470
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
