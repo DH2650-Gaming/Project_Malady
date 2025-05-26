@@ -3,6 +3,8 @@ using UnityEngine.UI;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic; // Required for Lists
 using System.Globalization;
+using UnityEngine.SceneManagement;
+
 
 /// <summary>
 /// Manages the overall game state, including pathfinder initialization,
@@ -340,7 +342,11 @@ public class GameMaster : MonoBehaviour
                 Time.timeScale = 0f;
                 if (uiGameOverPanel != null)
                 {
-                    uiGameOverPanel.transform.Find("text").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = "You Win!";
+                    uiGameOverPanel.transform.Find("Win").gameObject.SetActive(true);
+                    if(SceneManager.GetActiveScene().name == "Level_1")
+                    {
+                        uiGameOverPanel.transform.Find("Next").gameObject.SetActive(true);
+                    }
                     uiGameOverPanel.SetActive(true);
                 }
                 return;
@@ -449,20 +455,25 @@ public class GameMaster : MonoBehaviour
             Time.timeScale = 0f;
             if (uiGameOverPanel != null)
             {
+                uiGameOverPanel.transform.Find("Lose").gameObject.SetActive(true);
                 uiGameOverPanel.SetActive(true);
             }
         }
     }
 
+    public void LoadLevel2(){
+        SceneManager.LoadScene(2); 
+    }
+
     public void Pause() {
         if (paused)
         {
-            Time.timeScale = 0f;
-            paused = false;
-        }
-        else {
             Time.timeScale = 1f;
             paused = true;
+        }
+        else {
+            Time.timeScale = 0f;
+            paused = false;
         }
     }
 
