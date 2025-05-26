@@ -21,6 +21,7 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
     protected LayerMask ability2CheckLayerMask;
 
     // To make it reusable later
+    Vector2 directionToMouse;
     private float targetAngle;
 
     override protected void Start()
@@ -68,7 +69,7 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
             mouseScreenPosition.y,
             _mainCamera.transform.position.z - transform.position.z
         ));
-        Vector2 directionToMouse = (Vector2)mouseWorldPosition - _unitBody.position;
+        directionToMouse = (Vector2)mouseWorldPosition - _unitBody.position;
         targetAngle = Mathf.Atan2(directionToMouse.y, directionToMouse.x) * Mathf.Rad2Deg - 90f;
         //_unitBody.MoveRotation(targetAngle);
 
@@ -132,7 +133,7 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
     {
         if (timeSinceLastAbility1 >= ability1Cooldown)
         {
-            Vector2 direction = _unitBody.transform.up;
+            Vector2 direction = directionToMouse.normalized;
             float actualDistance = ability1TeleportDistance;
             float unitRadius = Mathf.Sqrt(_unitCollider.bounds.size.x * _unitCollider.bounds.size.y) / 2f;
             Collider2D hit = Physics2D.OverlapCircle(_unitBody.position + direction * actualDistance, unitRadius, ability1CheckLayerMask);

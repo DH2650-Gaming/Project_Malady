@@ -134,7 +134,7 @@ MonoBehaviour:
   unitName: Bran
   additionalTooltip: 
   unitType: 1
-  unitIcon: {fileID: -210077132, guid: ad8cadf63d4affc41be4301dad921fa0, type: 3}
+  unitIcon: {fileID: 429628923825286921, guid: 35fb42d76e5940845beaa7ffbc8927c9, type: 3}
   moveSpeed: 1.3
   maxHealth: 500
   currentHealth: 0
@@ -148,7 +148,7 @@ MonoBehaviour:
   ability1TeleportDistance: 2
   ability2RootDistance: 3
   ability2RootRadius: 1
-  ability2RootDuration: 3
+  ability2RootDuration: 4
   animator: {fileID: 2117755417068255677}
 --- !u!61 &5787809559503580477
 BoxCollider2D:
