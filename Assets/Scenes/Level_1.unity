@@ -675,7 +675,7 @@ MonoBehaviour:
     spawnDelay: 10
   startingLives: 10
   startingGold: 5
-  playerHeroPrefab: {fileID: 6466181356107375752, guid: 4e0418998cd4c6d41b012b85bffb6919, type: 3}
+  playerHeroPrefab: {fileID: 6466181356107375752, guid: ddd0f8c2866cc4aec94e71a3cc51b2a4, type: 3}
   playerHeroSpawnPoint: {fileID: 1485396793}
   playerHeroRespawnTime: 50
   playertowerPrefabs:

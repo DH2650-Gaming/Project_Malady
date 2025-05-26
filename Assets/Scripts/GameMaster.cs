@@ -469,11 +469,11 @@ public class GameMaster : MonoBehaviour
         if (paused)
         {
             Time.timeScale = 1f;
-            paused = true;
+            paused = false;
         }
         else {
             Time.timeScale = 0f;
-            paused = false;
+            paused = true;
         }
     }
 
