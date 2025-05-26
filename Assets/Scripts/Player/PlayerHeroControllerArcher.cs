@@ -20,6 +20,9 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
     protected LayerMask ability1CheckLayerMask;
     protected LayerMask ability2CheckLayerMask;
 
+    // To make it reusable later
+    private float targetAngle;
+
     override protected void Start()
     {
         unitType = UnitType.playerhero;
@@ -54,7 +57,7 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
         animator.SetFloat("moveSpeed", moveSpeed);
         Debug.Log("Set moveSpeed: " + moveSpeed);
 
-        // 打印 Animator 里当前的 moveSpeed 参数值
+        // 锟斤拷印 Animator 锟斤当前锟斤拷 moveSpeed 锟斤拷锟斤拷值
         float currentMoveSpeed = animator.GetFloat("moveSpeed");
         Debug.Log("Animator moveSpeed: " + currentMoveSpeed);
 
@@ -66,8 +69,8 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
             _mainCamera.transform.position.z - transform.position.z
         ));
         Vector2 directionToMouse = (Vector2)mouseWorldPosition - _unitBody.position;
-        float targetAngle = Mathf.Atan2(directionToMouse.y, directionToMouse.x) * Mathf.Rad2Deg - 90f;
-        _unitBody.MoveRotation(targetAngle);
+        targetAngle = Mathf.Atan2(directionToMouse.y, directionToMouse.x) * Mathf.Rad2Deg - 90f;
+        //_unitBody.MoveRotation(targetAngle);
 
         timeSinceLastHit += Time.deltaTime;
         timeSinceLastRegen += Time.deltaTime;
@@ -110,7 +113,7 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
             return;
         }
 
-        GameObject missileInstance = Instantiate(missilePrefab, transform.position, transform.rotation);
+        GameObject missileInstance = Instantiate(missilePrefab, transform.position, Quaternion.Euler(0f, 0f, targetAngle));
         MissileBase missileScript = missileInstance.GetComponent<MissileBase>();
 
         if (missileScript != null)
