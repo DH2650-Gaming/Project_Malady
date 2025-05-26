@@ -362,7 +362,7 @@ MonoBehaviour:
   cost: 25
   range: 5
   minimumRange: 0
-  turnSpeed: 60
+  turnSpeed: 120
   squareRange: 0
   hitDamage: 50
   damageType: 1
@@ -375,3 +375,4 @@ MonoBehaviour:
   reloadTimer1: 2
   reloadTimer2: 1
   damageRadius: 0.8
+  vfxPrefab: {fileID: 5894325932610074998, guid: 4544bf904427f47029a3019c843aa8a4, type: 3}

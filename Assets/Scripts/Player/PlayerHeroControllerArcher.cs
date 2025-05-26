@@ -56,11 +56,11 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
 
         float moveSpeed = _moveInput.magnitude;
         animator.SetFloat("moveSpeed", moveSpeed);
-        Debug.Log("Set moveSpeed: " + moveSpeed);
+        //Debug.Log("Set moveSpeed: " + moveSpeed);
 
         // ��ӡ Animator �ﵱǰ�� moveSpeed ����ֵ
         float currentMoveSpeed = animator.GetFloat("moveSpeed");
-        Debug.Log("Animator moveSpeed: " + currentMoveSpeed);
+        //Debug.Log("Animator moveSpeed: " + currentMoveSpeed);
 
 
         Vector3 mouseScreenPosition = Input.mousePosition;

@@ -90,6 +90,7 @@ public class GameMaster : MonoBehaviour
     [SerializeField] private List<Transform> exitCells = new List<Transform>();
     [Tooltip("Time delay in seconds between spawning enemies.")]
     [SerializeField] private List<EnemyGroup> spawnTable = new List<EnemyGroup>();
+    public ParticleSystem trappedVFXPrefab;
 
     [Header("Level Settings")]
     [Tooltip("Starting lives of the player.")]

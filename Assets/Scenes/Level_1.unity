@@ -673,6 +673,7 @@ MonoBehaviour:
       initialDelay: 0
       spawnInterval: 0.2
     spawnDelay: 10
+  trappedVFXPrefab: {fileID: 0}
   startingLives: 10
   startingGold: 5
   playerHeroPrefab: {fileID: 6466181356107375752, guid: ddd0f8c2866cc4aec94e71a3cc51b2a4, type: 3}
@@ -688,7 +689,7 @@ MonoBehaviour:
   uiCoinBar: {fileID: 0}
   uiStatsBar: {fileID: 0}
   uiBuildBar: {fileID: 0}
-  menuScreen: {fileID: 0}
+  menuScreen: {fileID: 905915917}
   currentLives: 0
   currentGold: 0
   playerhero: {fileID: 0}

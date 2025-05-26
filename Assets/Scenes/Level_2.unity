@@ -707,6 +707,7 @@ MonoBehaviour:
       initialDelay: 0
       spawnInterval: 0.3
     spawnDelay: 10
+  trappedVFXPrefab: {fileID: 3892296586143364596, guid: 6f363a4c074cb1d4489c954480a04b83, type: 3}
   startingLives: 10
   startingGold: 5
   playerHeroPrefab: {fileID: 6466181356107375752, guid: 4e0418998cd4c6d41b012b85bffb6919, type: 3}

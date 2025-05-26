@@ -136,7 +136,7 @@ MonoBehaviour:
   unitType: 1
   unitIcon: {fileID: 429628923825286921, guid: 35fb42d76e5940845beaa7ffbc8927c9, type: 3}
   moveSpeed: 1.3
-  maxHealth: 500
+  maxHealth: 300
   currentHealth: 0
   autoAttackDamage: 14
   autoAttackCooldown: 0.6

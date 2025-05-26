@@ -35,6 +35,7 @@ public class EnemyController : UnitBase
     protected float rootDebuffDuration = 0f;
     private Vector2 lastDirection; // for die animation
 
+    private ParticleSystem trappedVFX = null;
     //----Health bar ---
     [SerializeField] private Image enemyHealthBar;
 
@@ -55,6 +56,8 @@ public class EnemyController : UnitBase
             enabled = false;
             return;
         }
+
+
 
         groundTilemap = gm.groundTilemap;
         towerTilemap = gm.destructibleObstacleTilemaps[0];
@@ -213,6 +216,12 @@ public class EnemyController : UnitBase
         {
             rootDebuffDuration = 0f;
             moveSpeed = originalMoveSpeed;
+            if (trappedVFX != null)
+            {
+                trappedVFX.Stop();
+                Destroy(trappedVFX.gameObject);
+                trappedVFX = null;
+            }
         }
         if (rootDebuffDuration > 0f)
         {
@@ -239,8 +248,15 @@ public class EnemyController : UnitBase
     public void ApplyRootDebuff(float duration)
     {
         if (duration <= rootDebuffDuration) return;
-
+        
         rootDebuffDuration = duration;
+        if (trappedVFX == null)
+        {
+            trappedVFX = Instantiate(gm.trappedVFXPrefab, transform.position, Quaternion.identity).GetComponent<ParticleSystem>();
+            trappedVFX.transform.SetParent(transform);
+            trappedVFX.Play();
+        }
+        
         moveSpeed = 0f;
     }
     /// <summary>
@@ -314,7 +330,7 @@ public class EnemyController : UnitBase
     {
         if (damage <= 0) return; // No negative damage
 
-        Debug.Log("currentHealth" + currentHealth);
+        //Debug.Log("currentHealth" + currentHealth);
 
         currentHealth -= damage;
 
