@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement style="flex-grow: 1;">
+        <ui:Label text="Press T to pause the game and place towers with your coins" />
+        <ui:Label text="Press E to freeze all nearby enemies in place for a short amout of time" />
+        <ui:Label text="Press Q to teleport up to 2 squares of distance if not structure blocks you" />
+    </ui:VisualElement>
+</ui:UXML>

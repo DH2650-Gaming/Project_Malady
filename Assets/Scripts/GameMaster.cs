@@ -117,6 +117,7 @@ public class GameMaster : MonoBehaviour
     [ReadOnly] public GameObject uiCoinBar;
     [ReadOnly] public GameObject uiStatsBar;
     [ReadOnly] public GameObject uiBuildBar;
+    [SerializeField] private GameObject menuScreen;
     // Add more variables here for wave logic later (e.g., enemiesPerWave, timeBetweenWaves)
 
     [Header("Game State")]
@@ -147,7 +148,8 @@ public class GameMaster : MonoBehaviour
     private Color colorgreya = new Color(0.33f, 0.33f, 0.33f, alpha);
     private Color colorgreena = new Color(0f, 1f, 0f, alpha);
     private Color colorreda = new Color(1f, 0f, 0f, alpha);
-    private bool paused = false;
+    private bool towerPaused = false;
+    
 
     void Start()
     {
@@ -308,6 +310,11 @@ public class GameMaster : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.T))
         {
+            PauseForTower();
+        }
+
+        if (Input.GetKeyDown(KeyCode.P))
+        {
             Pause();
         }
         // Now it's attack by default so this is disabled
@@ -465,17 +472,33 @@ public class GameMaster : MonoBehaviour
         SceneManager.LoadScene(2); 
     }
 
-    public void Pause() {
-        if (paused)
+    public void PauseForTower() {
+        if (towerPaused)
         {
             Time.timeScale = 1f;
-            paused = false;
+            towerPaused = false;
         }
         else {
             Time.timeScale = 0f;
-            paused = true;
+            towerPaused = true;
         }
     }
+
+
+    public void Pause() {
+        if (towerPaused)
+        {
+            menuScreen.SetActive(false);
+            Time.timeScale = 1f;
+            towerPaused = false;
+        }
+        else {
+            menuScreen.SetActive(true);
+            Time.timeScale = 0f;
+            towerPaused = true;
+        }
+    }
+
 
     public void AddGold(int amount)
     {
