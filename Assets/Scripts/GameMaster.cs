@@ -150,7 +150,13 @@ public class GameMaster : MonoBehaviour
     private Color colorgreena = new Color(0f, 1f, 0f, alpha);
     private Color colorreda = new Color(1f, 0f, 0f, alpha);
     private bool towerPaused = false;
-    
+
+    //ability ui
+    public Image ability1CooldownImage;
+    public Image ability2CooldownImage;
+    private PlayerHeroControllerArcher archerScript;
+
+
 
     void Start()
     {
@@ -279,14 +285,25 @@ public class GameMaster : MonoBehaviour
                 {
                     SpawnHero();
                 }
-            }else
+                ability1CooldownImage.fillAmount = 0f;
+                ability2CooldownImage.fillAmount = 0f;
+            }
+            else
             {
                 heroDead = true;
                 heroRespawnTimer = 0f;
             }
         }
-        // Input listeners
-        Vector3 mouseWorldPosition = gameCamera.ScreenToWorldPoint(Input.mousePosition);
+        else
+        {
+            if (archerScript != null)
+            {
+                ability1CooldownImage.fillAmount = archerScript.Ability1CooldownNormalized;
+                ability2CooldownImage.fillAmount = archerScript.Ability2CooldownNormalized;
+            }
+        }
+            // Input listeners
+            Vector3 mouseWorldPosition = gameCamera.ScreenToWorldPoint(Input.mousePosition);
         if (Input.GetMouseButtonDown(0) && selectedTower != null)
         {
             Vector3Int cellPos = groundTilemap.WorldToCell(mouseWorldPosition);
@@ -471,6 +488,11 @@ public class GameMaster : MonoBehaviour
 
     public void LoadLevel2(){
         SceneManager.LoadScene(2); 
+    }
+
+    public void LoadWelcomeScene()
+    {
+        SceneManager.LoadScene(0);
     }
 
     public void PauseForTower() {
@@ -787,6 +809,13 @@ public class GameMaster : MonoBehaviour
             Destroy(playerhero);
         }
         playerhero = Instantiate(playerHeroPrefab, playerHeroSpawnPoint.position, Quaternion.identity);
+
+        // ability progress bar
+        archerScript = playerhero.GetComponent<PlayerHeroControllerArcher>();
+        if (archerScript == null)
+            Debug.LogWarning("PlayerHeroControllerArcher not found£¡");
+
+
         heroDead = false;
         heroRespawnTimer = 0f;
         uiStatsBarSelectedUnit = playerhero;

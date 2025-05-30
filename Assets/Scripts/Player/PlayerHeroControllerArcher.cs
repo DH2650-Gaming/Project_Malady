@@ -16,6 +16,7 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
     public float ability2RootDuration = 3f;
 
     [SerializeField] private Animator animator;
+    [SerializeField] AudioSource audioSource;
 
     protected LayerMask ability1CheckLayerMask;
     protected LayerMask ability2CheckLayerMask;
@@ -23,6 +24,10 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
     // To make it reusable later
     Vector2 directionToMouse;
     private float targetAngle;
+
+    // display ability ui
+    public float Ability1CooldownNormalized => Mathf.Clamp01(timeSinceLastAbility1 / ability1Cooldown);
+    public float Ability2CooldownNormalized => Mathf.Clamp01(timeSinceLastAbility2 / ability1Cooldown);
 
     override protected void Start()
     {
@@ -133,6 +138,7 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
     {
         if (timeSinceLastAbility1 >= ability1Cooldown)
         {
+            audioSource.Play();
             Vector2 direction = directionToMouse.normalized;
             float actualDistance = ability1TeleportDistance;
             float unitRadius = Mathf.Sqrt(_unitCollider.bounds.size.x * _unitCollider.bounds.size.y) / 2f;
@@ -155,6 +161,7 @@ public class PlayerHeroControllerArcher : PlayerHeroControllerBase
     {
         if (timeSinceLastAbility2 >= ability2Cooldown)
         {
+            audioSource.Play();
             Vector3 mouseScreenPosition = Input.mousePosition;
             Vector2 mouseWorldPosition = _mainCamera.ScreenToWorldPoint(new Vector3(
                 mouseScreenPosition.x,

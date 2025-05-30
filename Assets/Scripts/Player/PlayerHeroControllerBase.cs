@@ -24,6 +24,7 @@ public class PlayerHeroControllerBase : UnitBase
     protected float timeSinceLastAbility1 = 0f;
     protected float timeSinceLastAbility2 = 0f;
 
+
     protected virtual void Start()
     {
         unitType = UnitType.playerhero;
